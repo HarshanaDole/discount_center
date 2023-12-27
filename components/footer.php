@@ -2,137 +2,96 @@
 
     <!-- <section class="flex"> -->
 
-        <section class="column-container">
+    <section class="column-container">
 
-            <ul class="column">
+        <ul class="column">
 
-                <div class="footer-logo"><img src="img/dclogocrop.jpg" alt="DC Logo"></div>
+            <div class="footer-logo"><img src="img/dclogocrop.jpg" alt="DC Logo"></div>
 
-            </ul>
+        </ul>
 
-            <ul class="column">
+        <?php
+        // Assuming you have a function to fetch the latest products from the database
+        function getLatestProducts($conn, $limit = 5)
+        {
+            $select_latest_products = $conn->prepare("SELECT * FROM products ORDER BY id DESC LIMIT :limit");
+            $select_latest_products->bindParam(':limit', $limit, PDO::PARAM_INT);
+            $select_latest_products->execute();
 
-                <h2 class="column-title">latest products</h2>
+            return $select_latest_products->fetchAll(PDO::FETCH_ASSOC);
+        }
 
+        // Fetch the latest 5 products
+        $latest_products = getLatestProducts($conn, 5);
+        ?>
+
+        <ul class="column">
+            <h2 class="column-title">latest products</h2>
+
+            <?php foreach ($latest_products as $product) : ?>
                 <li class="product-widget">
-                    <div class="img-container">
-                        <img src="img/tv-product.png" alt="">
-                    </div>
+                    <a class="img-a" href="product_view.php?pid=<?php echo $product['id']; ?>">
+                        <div class="img-container">
+                            <img src="uploaded_img/<?php echo $product['image_01']; ?>" alt="<?php echo $product['name']; ?>">
+                        </div>
+                    </a>
                     <div class="details">
-                        <span class="product-name">Samsung TV</span>
+                        <a class="name-a" href="product_view.php?pid=<?php echo $product['id']; ?>">
+                            <span title="<?php echo $product['name']; ?>" class="product-name"><?php echo $product['name']; ?></span>
+                        </a>
                         <div class="prices">
-                            <span class="newprice">Rs.112000</span>
-                            <span class="oldprice">Rs.120000</span>
+                            <span class="newprice">Rs.<?php echo number_format($product['price']); ?></span>
+                            <span class="oldprice">Rs.<?php echo number_format($product['old_price']); ?></span>
                         </div>
                     </div>
                 </li>
+            <?php endforeach; ?>
+        </ul>
+
+
+        <?php
+        $select_featured_products = $conn->prepare("SELECT * FROM products WHERE featured = 1 ORDER BY id LIMIT 3");
+        $select_featured_products->execute();
+        $featured_products = $select_featured_products->fetchAll(PDO::FETCH_ASSOC);
+        ?>
+
+        <ul class="column">
+            <h2 class="column-title">top products</h2>
+
+            <?php foreach ($featured_products as $product) : ?>
                 <li class="product-widget">
-                    <div class="img-container">
-                        <img src="img/beats-narkitecture-01-300x300.jpg" alt="">
-                    </div>
+                    <a class="img-a" href="product_view.php?pid=<?php echo $product['id']; ?>">
+                        <div class="img-container">
+                            <img src="uploaded_img/<?php echo $product['image_01']; ?>" alt="<?php echo $product['name']; ?>">
+                        </div>
+                    </a>
                     <div class="details">
-                        <span class="product-name">Beats Headphone</span>
+                        <a class="name-a" href="product_view.php?pid=<?php echo $product['id']; ?>">
+                            <span title="<?php echo $product['name']; ?>" class="product-name"><?php echo $product['name']; ?></span>
+                        </a>
                         <div class="prices">
-                            <span class="newprice">Rs.12000</span>
-                            <span class="oldprice">Rs.20000</span>
+                            <span class="newprice">Rs.<?php echo $product['price']; ?></span>
+                            <span class="oldprice">Rs.<?php echo $product['old_price']; ?></span>
                         </div>
                     </div>
                 </li>
-                <li class="product-widget">
-                    <div class="img-container">
-                        <img src="img/denon-head-01-300x300.jpg" alt="">
-                    </div>
-                    <div class="details">
-                        <span class="product-name">Denon Headphone</span>
-                        <div class="prices">
-                            <span class="newprice">Rs.18000</span>
-                            <span class="oldprice">Rs.25000</span>
-                        </div>
-                    </div>
-                </li>
-                <li class="product-widget">
-                    <div class="img-container">
-                        <img src="img/imac_n-300x300.jpg" alt="">
-                    </div>
-                    <div class="details">
-                        <span class="product-name">iMac Monitor</span>
-                        <div class="prices">
-                            <span class="newprice">Rs.122000</span>
-                            <span class="oldprice">Rs.140000</span>
-                        </div>
-                    </div>
-                </li>
-                <li class="product-widget">
-                    <div class="img-container">
-                        <img src="img/360moto-01.jpg" alt="">
-                    </div>
-                    <div class="details">
-                        <span class="product-name">360 Moto Watch</span>
-                        <div class="prices">
-                            <span class="newprice">Rs.32000</span>
-                            <span class="oldprice">Rs.50000</span>
-                        </div>
-                    </div>
-                </li>
-
-            </ul>
-
-            <ul class="column">
-
-                <h2 class="column-title">top products</h2>
-
-                <li class="product-widget">
-                    <div class="img-container">
-                        <img src="img/iphone6-300x300.jpg" alt="">
-                    </div>
-                    <div class="details">
-                        <span class="product-name">iPhone 6</span>
-                        <div class="prices">
-                            <span class="newprice">Rs.12000</span>
-                            <span class="oldprice">Rs.20000</span>
-                        </div>
-                    </div>
-                </li>
-                <li class="product-widget">
-                    <div class="img-container">
-                        <img src="img/imac_n-300x300.jpg" alt="">
-                    </div>
-                    <div class="details">
-                        <span class="product-name">iMac Monitor</span>
-                        <div class="prices">
-                            <span class="newprice">Rs.122000</span>
-                            <span class="oldprice">Rs.140000</span>
-                        </div>
-                    </div>
-                </li>
-                <li class="product-widget">
-                    <div class="img-container">
-                        <img src="img/tv-product.png" alt="">
-                    </div>
-                    <div class="details">
-                        <span class="product-name">Beats Headphone</span>
-                        <div class="prices">
-                            <span class="newprice">Rs.12000</span>
-                            <span class="oldprice">Rs.20000</span>
-                        </div>
-                    </div>
-                </li>
-
-            </ul>
+            <?php endforeach; ?>
+        </ul>
 
 
-            <div class="column">
 
-                <h2 class="column-title">newsletter</h2>
+        <div class="column">
 
-                <div class="input-field">
-                    <input class="email" type="email" name="email" id="email" value="Your email address">
-                    <input class="btn" type="submit" value="SIGN UP">
-                </div>
+            <h2 class="column-title">newsletter</h2>
 
+            <div class="input-field">
+                <input class="email" type="email" name="email" id="email" value="Your email address">
+                <input class="btn" type="submit" value="SIGN UP">
             </div>
 
-</section>
+        </div>
+
+    </section>
 
     <!-- </section> -->
 

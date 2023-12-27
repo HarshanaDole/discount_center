@@ -35,31 +35,50 @@
             </div>
 
 
-            <div class="cart">
-                <i class="fa-solid fa-cart-shopping"></i>
-                <div class="cart-info">
-                    <span class="subheading">0 items</span>
-                    <span class="heading">0.00LKR</span>
+            <?php
+            // Get the number of cart items for the current session ID
+            $cart_count = 0;
+            if (isset($_COOKIE['session_id'])) {
+                $session_id = $_COOKIE['session_id'];
+                $cart_query = $conn->prepare("SELECT COUNT(*) FROM cart WHERE session_id = ?");
+                $cart_query->execute([$session_id]);
+                $cart_count = $cart_query->fetchColumn();
+            }
+
+            $total_price = 0.00;
+            $cart_query = $conn->prepare("SELECT price, quantity FROM cart WHERE session_id = ?");
+            $cart_query->execute([$session_id]);
+            while ($cart_item = $cart_query->fetch(PDO::FETCH_ASSOC)) {
+                $total_price += $cart_item['price'] * $cart_item['quantity'];
+            }
+            ?>
+            <a href="cart.php">
+                <div class="cart">
+                    <i class="fa-solid fa-cart-shopping"></i>
+                    <div class="cart-info">
+                        <span class="subheading"><?php echo $cart_count ?> items</span>
+                        <span class="heading"><?php echo number_format($total_price) ?>LKR</span>
+                    </div>
+                    <div class="cart-notification"><?php echo $cart_count ?></div>
                 </div>
-                <div class="cart-notification">0</div>
-            </div>
+            </a>
 
         </div>
 
     </section>
 
-    <hr style="border-top: 1px solid whitesmoke;">
+    <hr style="border-top: 1px solid whitesmoke;" class="header-bottom-border">
 
 
     <nav class="navbar">
         <ul>
-            <li><a href="index.php">Home</a></li>
+            <li class="home-link"><a href="index.php">Home</a></li>
 
             <li><a href="#">Shop<i class="fa-solid fa-chevron-down"></i></a>
                 <div class="subnav">
                     <ul>
-                        <li><a href="#"><i class="fa-solid fa-chevron-right"></i> Cart</a></li>
-                        <li><a href="#"><i class="fa-solid fa-chevron-right"></i> Wishlist</a></li>
+                        <li><a href="cart.php"><i class="fa-solid fa-chevron-right"></i> Cart</a></li>
+                        <li><a href="wishlist.php"><i class="fa-solid fa-chevron-right"></i> Wishlist</a></li>
                         <li><a href="#"><i class="fa-solid fa-chevron-right"></i> My account</a></li>
                     </ul>
                 </div>
@@ -120,8 +139,8 @@
                 </div>
             </li>
 
-            <li><a href="service.php">Service</a></li>
-            <li><a href="about.php">About</a></li>
+            <li><a href="#">Service</a></li>
+            <li><a href="#">About</a></li>
         </ul>
     </nav>
 

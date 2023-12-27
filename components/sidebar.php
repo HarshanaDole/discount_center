@@ -85,13 +85,13 @@
 
     <ul class="fixed">
         <li><a href="index.php">Home</a></li>
-        <li><a href="service.php">Service</a></li>
-        <li><a href="about.php">About</a></li>
+        <li><a href="#">Service</a></li>
+        <li><a href="#">About</a></li>
     </ul>
 
     <ul class="fixed">
-        <li><i class="fas fa-heart"></i><a href="#">Wishlist</a></li>
-        <li><i class="fa-solid fa-cart-shopping"></i><a href="#">Cart</a></li>
+        <li><i class="fas fa-heart"></i><a href="wishlist.php">Wishlist</a></li>
+        <li><i class="fa-solid fa-cart-shopping"></i><a href="cart.php">Cart</a></li>
     </ul>
 
     <ul class="socials">

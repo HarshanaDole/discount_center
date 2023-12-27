@@ -260,4 +260,37 @@ document.addEventListener("click", function (event) {
   }
 });
 
+document.addEventListener("DOMContentLoaded", function () {
+  // Get the current scroll position from the session storage
+  var scrollPosition = sessionStorage.getItem("scrollPosition");
+
+  if (scrollPosition !== null) {
+    window.scrollTo(0, scrollPosition);
+  }
+});
+
+// Save scroll position before performing actions
+function saveScrollPosition() {
+  var scrollPosition = window.scrollY;
+  sessionStorage.setItem("scrollPosition", scrollPosition);
+}
+
+// Save scroll position before clicking on specific buttons
+document
+  .querySelectorAll(".option-btn, .heart-icon, .btn, .delete-btn")
+  .forEach((button) => {
+    button.addEventListener("click", saveScrollPosition);
+  });
+
+// Remove the scroll position for all other elements
+document.body.addEventListener("click", function (event) {
+  var targetElement = event.target;
+
+  if (
+    !targetElement.matches(".option-btn, .heart-icon, .btn, .delete-btn") &&
+    !targetElement.closest(".option-btn, .heart-icon, .btn, .delete-btn")
+  ) {
+    sessionStorage.removeItem("scrollPosition");
+  }
+});
 

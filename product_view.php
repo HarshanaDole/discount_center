@@ -2,6 +2,22 @@
 
 include 'components/connect.php';
 
+session_start();
+
+if (isset($_COOKIE['session_id'])) {
+    $session_id = $_COOKIE['session_id'];
+} else {
+    $session_id = uniqid();
+    setcookie('session_id', $session_id, time() + (86400 * 30), "/"); // set cookie to expire in 30 days
+}
+
+include 'components/wishlist_cart.php';
+
+if (isset($_POST['add_to_cart'])) {
+    header('Location: product_view.php?pid=' . $_POST['pid']);
+    exit();
+}
+
 ?>
 
 <!DOCTYPE html>
@@ -26,41 +42,116 @@ include 'components/connect.php';
 
         <?php include 'components/header.php'; ?>
 
-        <section class="product-view">
-            <div class="row">
-                <div class="image-container">
-                    <img src="img/360moto-01.jpg" alt="">
-                    <div class="other-img">
-                        <img src="img/360moto-01.jpg" alt="">
-                        <img src="img/360moto-01.jpg" alt="">
-                        <img src="img/360moto-01.jpg" alt="">
-                    </div>
-                </div>
-                <div class="product-info">
-                    <h1 class="product-name">Motorola Moto 360</h1>
-                    <span class="price">Rs. 14,000</span>
-                    <div class="description">The new Moto 360 combines edge-to-edge glass with an exceptionally thin, polished bezel, giving you the largest viewing area. Whether you choose rose gold, black, or silver, the case is precision-crafted from aircraft-grade stainless steel.</div>
-                    <div class="button-container">
-                        <div class="quantity" id="quantity">1</div>
-                        <div class="adjust">
-                            <button class="up" onclick="updateQuantity(1)">+</button>
-                            <button class="down" onclick="updateQuantity(-1)">-</button>
+        <?php
+        $pid = $_GET['pid'];
+        $select_products = $conn->prepare("SELECT * FROM `products` WHERE id = ?");
+        $select_products->execute([$pid]);
+        if ($select_products->rowCount() > 0) {
+            while ($fetch_product = $select_products->fetch(PDO::FETCH_ASSOC)) {
+        ?>
+                <section class="product-view">
+                    <form action="" method="post">
+                        <input type="hidden" name="pid" value="<?= $fetch_product['id']; ?>">
+                        <input type="hidden" name="name" value="<?= $fetch_product['name']; ?>">
+                        <input type="hidden" name="price" value="<?= $fetch_product['price']; ?>">
+                        <input type="hidden" name="image" value="<?= $fetch_product['image_01']; ?>">
+                        <div class="row">
+                            <div class="image-container">
+                                <img src="uploaded_img/<?php echo $fetch_product['image_01']; ?>" alt="<?php echo $fetch_product['name']; ?>">
+                                <div class="other-img">
+                                    <img src="uploaded_img/<?php echo $fetch_product['image_01']; ?>" alt="<?php echo $fetch_product['name']; ?>">
+                                    <img src="uploaded_img/<?php echo $fetch_product['image_02']; ?>" alt="<?php echo $fetch_product['name']; ?>">
+                                    <img src="uploaded_img/<?php echo $fetch_product['image_03']; ?>" alt="<?php echo $fetch_product['name']; ?>">
+                                </div>
+                            </div>
+                            <div class="product-info">
+                                <h1 class="product-name"><?php echo $fetch_product['name']; ?></h1>
+                                <span class="price">Rs. <?php echo number_format($fetch_product['price']); ?></span>
+                                <div class="description"><?php echo $fetch_product['description']; ?></div>
+                                <div class="button-container">
+                                    <input type="number" name="qty" class="quantity" id="quantity" value="1" min="1" max="99" onclick="event.preventDefault()" onkeypress="if(this.value.length == 2) return false;">
+                                    <div class="adjust" id="adjust">
+                                        <button class="up" onclick="updateQuantity(1); event.preventDefault()">+</button>
+                                        <button class="down" onclick="updateQuantity(-1); event.preventDefault()">-</button>
+                                    </div>
+                                    <?php
+                                    if ($fetch_product['availability'] === 'out of stock') {
+                                        echo '<input type="submit" value="out of stock" class="btn out-of-stock" name="out_of_stock" disabled>';
+                                    } else {
+                                        echo '<input type="submit" value="add to cart" class="btn" name="add_to_cart">';
+                                    }
+                                    ?>
+                                </div>
+                            </div>
                         </div>
-                        <div class="btn">add to cart</div>
+                    </form>
+
+                    <?php
+                    function getCategoryHierarchy($conn, $category_id)
+                    {
+                        try {
+                            // Fetch category information
+                            $select_category = $conn->prepare("SELECT id, name, parent_id FROM categories WHERE id = :id");
+                            $select_category->bindParam(':id', $category_id);
+                            $select_category->execute();
+                            $category_info = $select_category->fetch(PDO::FETCH_ASSOC);
+
+                            if ($category_info) {
+                                // Check if the category is already a main category
+                                if ($category_info['parent_id'] == 0) {
+                                    return array($category_info);
+                                } else {
+                                    // Recursively get the hierarchy for the parent category
+                                    $parent_hierarchy = getCategoryHierarchy($conn, $category_info['parent_id']);
+
+                                    // Add the current category to the hierarchy
+                                    $parent_hierarchy[] = $category_info;
+
+                                    return $parent_hierarchy;
+                                }
+                            }
+
+                            return array(); // Return an empty array if category information is not found
+                        } catch (PDOException $e) {
+                            echo "Error: " . $e->getMessage();
+                            return array(); // Return an empty array in case of an error
+                        }
+                    }
+                    ?>
+
+                    <div class="row">
+                        <div class="product-meta">
+                            <span class="model-wrapper">model: <span class="model"><?php echo $fetch_product['model']; ?></span></span>
+                            <span class="categories-wrapper">categories:
+                                <?php
+                                $categoryHierarchy = getCategoryHierarchy($conn, $fetch_product['category']);
+                                $totalCategories = count($categoryHierarchy);
+
+                                foreach ($categoryHierarchy as $index => $category) {
+                                    echo '<span class="categories">' . $category['name'] . '</span>';
+
+                                    // Add separator if not the last category
+                                    if ($index < $totalCategories - 1) {
+                                        echo ' > ';
+                                    }
+                                }
+                                ?>
+                            </span>
+                        </div>
                     </div>
 
-                </div>
-            </div>
 
-            <div class="row">
-                <div class="product-meta">
-                    <span class="model-wrapper">model: <span class="model">SKU1234</span></span>
-                    <span class="categories-wrapper">categories: <span class="categories">Accessories, </span><span class="categories">Headphones</span></span>
-                </div>
-            </div>
-        </section>
+            <?php
+            }
+        } else {
+            echo '<p class="empty">no products added yet!</p>';
+        }
+            ?>
 
-        <?php include 'components/footer.php'; ?>
+                </section>
+
+
+                <?php include 'components/footer.php'; ?>
 
     </div>
 
@@ -72,24 +163,15 @@ include 'components/connect.php';
         // Function to update the quantity
         function updateQuantity(change) {
             var quantityElement = document.getElementById("quantity");
-            var currentQuantity = parseInt(quantityElement.textContent);
+            var currentQuantity = parseInt(quantityElement.value);
 
             // Update the quantity based on the change parameter
             var newQuantity = currentQuantity + change;
 
             // Ensure the quantity doesn't go below 1
             if (newQuantity >= 1) {
-                quantityElement.textContent = newQuantity;
+                quantityElement.value = newQuantity;
             }
-
-            // Always show the adjust field after updating the quantity
-            showAdjust();
-        }
-
-        // Function to show the adjust field
-        function showAdjust() {
-            var adjustField = document.querySelector(".adjust");
-            adjustField.style.display = "flex";
         }
     </script>
 

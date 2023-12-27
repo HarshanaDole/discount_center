@@ -17,6 +17,8 @@ if (isset($_POST['update'])) {
    $name = filter_var($name, FILTER_SANITIZE_STRING);
    $model = $_POST['model'];
    $model = filter_var($model, FILTER_SANITIZE_STRING);
+   $old_price = $_POST['old_price'];
+   $old_price = filter_var($old_price, FILTER_SANITIZE_STRING);
    $price = $_POST['price'];
    $price = filter_var($price, FILTER_SANITIZE_STRING);
    $category = $_POST['category_id'];
@@ -28,8 +30,8 @@ if (isset($_POST['update'])) {
    $availability = $_POST['availability'];
    $availability = filter_var($availability, FILTER_SANITIZE_STRING);
 
-   $update_product = $conn->prepare("UPDATE `products` SET name = ?, model = ?, price = ?, category = ?, description = ?, point_desc = ?, availability = ? WHERE id = ?");
-   $update_product->execute([$name, $model, $price, $category, $description, $point_desc, $availability, $pid]);
+   $update_product = $conn->prepare("UPDATE `products` SET name = ?, model = ?, old_price = ?, price = ?, category = ?, description = ?, point_desc = ?, availability = ? WHERE id = ?");
+   $update_product->execute([$name, $model, $old_price, $price, $category, $description, $point_desc, $availability, $pid]);
 
    $message[] = 'product updated successfully!';
 
@@ -148,6 +150,8 @@ if (isset($_POST['update'])) {
                <input type="text" name="name" required class="box" maxlength="100" placeholder="enter product name" value="<?= $fetch_products['name']; ?>">
                <span>update model</span>
                <input type="text" name="model" required class="box" maxlength="50" placeholder="enter model number" value="<?= $fetch_products['model']; ?>">
+               <span>update old price</span>
+               <input type="text" name="old_price" required class="box no-spinner" placeholder="enter old price" onkeypress="if(this.value.length == 10) return false;" pattern="\d+(\.\d{2})?" value="<?= $fetch_products['old_price']; ?>">
                <span>update price</span>
                <input type="text" name="price" required class="box no-spinner" placeholder="enter product price" onkeypress="if(this.value.length == 10) return false;" pattern="\d+(\.\d{2})?" value="<?= $fetch_products['price']; ?>">
                <span>update category</span>

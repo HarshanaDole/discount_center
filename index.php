@@ -2,6 +2,22 @@
 
 include 'components/connect.php';
 
+session_start();
+
+if (isset($_COOKIE['session_id'])) {
+    $session_id = $_COOKIE['session_id'];
+} else {
+    $session_id = uniqid();
+    setcookie('session_id', $session_id, time() + (86400 * 30), "/"); // set cookie to expire in 30 days
+}
+
+include 'components/wishlist_cart.php';
+
+if (isset($_POST['add_to_cart'])) {
+    header('Location: index.php');
+    exit();
+}
+
 ?>
 
 <!DOCTYPE html>
@@ -118,28 +134,70 @@ include 'components/connect.php';
         $select_featured_products = $conn->prepare("SELECT * FROM products WHERE featured = 1");
         $select_featured_products->execute();
         $featured_products = $select_featured_products->fetchAll(PDO::FETCH_ASSOC);
+
+        function getMainCategoryName($conn, $category_id)
+        {
+            try {
+                // Fetch category information
+                $select_category = $conn->prepare("SELECT name, parent_id FROM categories WHERE id = :id");
+                $select_category->bindParam(':id', $category_id);
+                $select_category->execute();
+                $category_info = $select_category->fetch(PDO::FETCH_ASSOC);
+
+                if ($category_info) {
+                    // Check if the category is already a main category
+                    if ($category_info['parent_id'] == 0) {
+                        return $category_info['name'];
+                    } else {
+                        // Recursively get the main category name for the parent category
+                        $main_category_name = getMainCategoryName($conn, $category_info['parent_id']);
+
+                        return $main_category_name;
+                    }
+                }
+
+                return ''; // Return an empty string if category information is not found
+            } catch (PDOException $e) {
+                echo "Error: " . $e->getMessage();
+                return ''; // Return an empty string in case of an error
+            }
+        }
         ?>
 
         <div class="featured-products-container">
             <?php foreach ($featured_products as $product) : ?>
                 <div class="product-card">
-                    <a class="image-container" href="product_view.php">
-                        <img src="uploaded_img/<?php echo $product['image_01']; ?>" alt="product">
-                    </a>
-                    <div class="details">
-                        <span class="category-name"><?php echo $product['category']; ?></span>
-                        <a href="product_view.php">
-                            <span class="product-name"><?php echo $product['name']; ?></span>
+                    <form method="post">
+                        <input type="hidden" name="pid" value="<?php echo $product['id']; ?>">
+                        <input type="hidden" name="name" value="<?php echo $product['name']; ?>">
+                        <input type="hidden" name="price" value="<?php echo $product['price']; ?>">
+                        <input type="hidden" name="image" value="<?php echo $product['image_01']; ?>">
+                        <input type="hidden" name="qty" value="1">
+                        <a class="image-container" href="product_view.php?pid=<?php echo $product['id']; ?>">
+                            <img src="uploaded_img/<?php echo $product['image_01']; ?>" alt="product">
                         </a>
-                        <hr>
-                        <div class="loop-btn">
-                            <span class="price">Rs. <?php echo number_format($product['price']); ?></span>
-                            <a href="" class="option-btn">add to cart</a>
+                        <div class="details">
+                            <span class="category-name">
+                                <?php
+                                $main_category_name = getMainCategoryName($conn, $product['category']);
+                                echo $main_category_name;
+                                ?>
+                            </span>
+                            <a href="product_view.php?pid=<?php echo $product['id']; ?>">
+                                <span class="product-name" title="<?php echo $product['name']; ?>"><?php echo $product['name']; ?></span>
+                            </a>
+                            <hr>
+                            <div class="loop-btn">
+                                <span class="price">Rs. <?php echo number_format($product['price']); ?></span>
+                                <button class="option-btn" type="submit" name="add_to_cart">Add to Cart</button>
+                                <button class="heart-icon fa-regular fa-heart" type="submit" name="add_to_wishlist"></button>
+                            </div>
                         </div>
-                    </div>
+                    </form>
                 </div>
             <?php endforeach; ?>
         </div>
+
 
         <div class="top-choices">
             <div class="bg-image">
@@ -153,39 +211,86 @@ include 'components/connect.php';
                     <div class="subheading">discount center</div>
                 </div>
 
+                <?php
+                function getAllCategoryIds($conn, $category_id, &$categoryIds)
+                {
+                    $categoryIds[] = $category_id;
+
+                    $select_subcategories = $conn->prepare("SELECT id FROM categories WHERE parent_id = :category_id");
+                    $select_subcategories->bindParam(':category_id', $category_id);
+                    $select_subcategories->execute();
+                    $subcategories = $select_subcategories->fetchAll(PDO::FETCH_ASSOC);
+
+                    foreach ($subcategories as $subcategory) {
+                        getAllCategoryIds($conn, $subcategory['id'], $categoryIds);
+                    }
+                }
+
+                // Function to fetch products for multiple categories
+                function getProductsByCategories($conn, $categoryIds, $limit = 3)
+                {
+                    $inClause = implode(',', array_map(function ($index) {
+                        return ":category_$index";
+                    }, array_keys($categoryIds)));
+
+                    $select_products = $conn->prepare("SELECT * FROM products WHERE category IN ($inClause) ORDER BY id DESC LIMIT :limit");
+
+                    foreach ($categoryIds as $index => $categoryId) {
+                        $paramName = ":category_$index";
+                        $select_products->bindValue($paramName, $categoryId, PDO::PARAM_INT);
+                    }
+
+                    $select_products->bindParam(':limit', $limit, PDO::PARAM_INT);
+                    $select_products->execute();
+
+                    return $select_products->fetchAll(PDO::FETCH_ASSOC);
+                }
+
+
+                $main_category_id_1 = 3;
+                $categoryIds_1 = [];
+                getAllCategoryIds($conn, $main_category_id_1, $categoryIds_1);
+                $products_1 = getProductsByCategories($conn, $categoryIds_1);
+
+                $main_category_id_2 = 13;
+                $categoryIds_2 = [];
+                getAllCategoryIds($conn, $main_category_id_2, $categoryIds_2);
+                $products_2 = getProductsByCategories($conn, $categoryIds_2);
+                ?>
+
                 <div class="grid-container">
 
-                    <div class="product-card">
-                        <a class="image-container" href="#">
-                            <img src="img/iphone5s-1-300x300.jpg" alt="product">
-                        </a>
-                        <div class="details">
-                            <span class="category-name">cellphones</span>
-                            <span class="product-name">Apple iPhone 5s</span>
-                            <hr>
-                            <span class="price">Rs. 124,000.00</span>
-                        </div>
-                    </div>
-                    <div class="product-card">
-                        <a class="image-container" href="#">
-                            <img src="img/ipad-mini-01-300x300.jpg" alt="product">
-                        </a>
-                        <div class="details">
-                            <span class="category-name">computers & tablets</span>
-                            <span class="product-name">Apple iPad Mini</span>
-                            <span class="price">Rs. 235,000.00</span>
-                        </div>
-                    </div>
-                    <div class="product-card">
-                        <a class="image-container" href="#">
-                            <img src="img/iphone6-300x300.jpg" alt="product">
-                        </a>
-                        <div class="details">
-                            <span class="category-name">cellphones</span>
-                            <span class="product-name">Apple iPhone 6</span>
-                            <span class="price">Rs. 140,000.00</span>
-                        </div>
-                    </div>
+                    <?php foreach ($products_1 as $product) : ?>
+                        <form action="" method="post">
+                            <input type="hidden" name="pid" value="<?php echo $product['id']; ?>">
+                            <input type="hidden" name="name" value="<?php echo $product['name']; ?>">
+                            <input type="hidden" name="price" value="<?php echo $product['price']; ?>">
+                            <input type="hidden" name="image" value="<?php echo $product['image_01']; ?>">
+                            <input type="hidden" name="qty" value="1">
+                            <div class="product-card">
+                                <a class="image-container" href="product_view.php?pid=<?php echo $product['id']; ?>">
+                                    <img src="uploaded_img/<?php echo $product['image_01']; ?>" alt="product">
+                                </a>
+                                <div class="details">
+                                    <span class="category-name">
+                                        <?php
+                                        $main_category_name = getMainCategoryName($conn, $product['category']);
+                                        echo $main_category_name;
+                                        ?>
+                                    </span>
+                                    <a href="product_view.php?pid=<?php echo $product['id']; ?>">
+                                        <span class="product-name" title="<?php echo $product['name']; ?>"><?php echo $product['name']; ?></span>
+                                    </a>
+                                    <hr>
+                                    <div class="loop-btn">
+                                        <span class="price">Rs. <?php echo number_format($product['price']); ?></span>
+                                        <button class="option-btn" type="submit" name="add_to_cart">Add to Cart</button>
+                                        <button class="heart-icon fa-regular fa-heart" type="submit" name="add_to_wishlist"></button>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    <?php endforeach; ?>
 
                 </div>
 
@@ -207,39 +312,37 @@ include 'components/connect.php';
 
                 <div class="grid-container">
 
-                    <div class="product-card">
-                        <a class="image-container" href="#">
-                            <img src="img/beats-narkitecture-01-300x300.jpg" alt="product">
-                        </a>
-                        <div class="details">
-                            <span class="category-name">Accessories</span>
-                            <span class="product-name">Beats Headphone 2</span>
-                            <hr>
-                            <span class="price">Rs. 34,000.00</span>
-                        </div>
-                    </div>
-                    <div class="product-card">
-                        <a class="image-container" href="#">
-                            <img src="img/denon-head-01-300x300.jpg" alt="product">
-                        </a>
-                        <div class="details">
-                            <span class="category-name">Accessories</span>
-                            <span class="product-name">Denon Headphones</span>
-                            <hr>
-                            <span class="price">Rs. 24,000.00</span>
-                        </div>
-                    </div>
-                    <div class="product-card">
-                        <a class="image-container" href="#">
-                            <img src="img/imac_n-300x300.jpg" alt="product">
-                        </a>
-                        <div class="details">
-                            <span class="category-name">computers & tablets</span>
-                            <span class="product-name">Apple iMac 27-inch</span>
-                            <hr>
-                            <span class="price">Rs. 124,000.00</span>
-                        </div>
-                    </div>
+                    <?php foreach ($products_2 as $product) : ?>
+                        <form action="" method="post">
+                            <input type="hidden" name="pid" value="<?php echo $product['id']; ?>">
+                            <input type="hidden" name="name" value="<?php echo $product['name']; ?>">
+                            <input type="hidden" name="price" value="<?php echo $product['price']; ?>">
+                            <input type="hidden" name="image" value="<?php echo $product['image_01']; ?>">
+                            <input type="hidden" name="qty" value="1">
+                            <div class="product-card">
+                                <a class="image-container" href="product_view.php?pid=<?php echo $product['id']; ?>">
+                                    <img src="uploaded_img/<?php echo $product['image_01']; ?>" alt="product">
+                                </a>
+                                <div class="details">
+                                    <span class="category-name">
+                                        <?php
+                                        $main_category_name = getMainCategoryName($conn, $product['category']);
+                                        echo $main_category_name;
+                                        ?>
+                                    </span>
+                                    <a href="product_view.php?pid=<?php echo $product['id']; ?>">
+                                        <span class="product-name" title="<?php echo $product['name']; ?>"><?php echo $product['name']; ?></span>
+                                    </a>
+                                    <hr>
+                                    <div class="loop-btn">
+                                        <span class="price">Rs. <?php echo number_format($product['price']); ?></span>
+                                        <button class="option-btn" type="submit" name="add_to_cart">Add to Cart</button>
+                                        <button class="heart-icon fa-regular fa-heart" type="submit" name="add_to_wishlist"></button>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    <?php endforeach; ?>
 
                 </div>
 
