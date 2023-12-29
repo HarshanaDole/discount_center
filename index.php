@@ -166,14 +166,14 @@ if (isset($_POST['add_to_cart'])) {
 
         <div class="featured-products-container">
             <?php foreach ($featured_products as $product) : ?>
-                <div class="product-card">
+                <div class="product-card <?php echo ($product['availability'] === 'out of stock') ? 'out-of-stock' : ''; ?>">
                     <form method="post">
                         <input type="hidden" name="pid" value="<?php echo $product['id']; ?>">
                         <input type="hidden" name="name" value="<?php echo $product['name']; ?>">
                         <input type="hidden" name="price" value="<?php echo $product['price']; ?>">
                         <input type="hidden" name="image" value="<?php echo $product['image_01']; ?>">
                         <input type="hidden" name="qty" value="1">
-                        <a class="image-container" href="product_view.php?pid=<?php echo $product['id']; ?>">
+                        <a class="image-container  <?php echo ($product['availability'] === 'out of stock') ? 'out-of-stock' : ''; ?>" href="product_view.php?pid=<?php echo $product['id']; ?>">
                             <img src="uploaded_img/<?php echo $product['image_01']; ?>" alt="product">
                         </a>
                         <div class="details">
@@ -189,7 +189,13 @@ if (isset($_POST['add_to_cart'])) {
                             <hr>
                             <div class="loop-btn">
                                 <span class="price">Rs. <?php echo number_format($product['price']); ?></span>
-                                <button class="option-btn" type="submit" name="add_to_cart">Add to Cart</button>
+                                <?php
+                                if ($product['availability'] === 'out of stock') {
+                                    echo '<button class="btn" type="submit" name="out_of_stock" disabled>Out of Stock</button>';
+                                } else {
+                                    echo '<button class="option-btn" type="submit" name="add_to_cart">Add to Cart</button>';
+                                }
+                                ?>
                                 <button class="heart-icon fa-regular fa-heart" type="submit" name="add_to_wishlist"></button>
                             </div>
                         </div>

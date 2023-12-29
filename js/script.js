@@ -294,3 +294,16 @@ document.body.addEventListener("click", function (event) {
   }
 });
 
+document.addEventListener("DOMContentLoaded", function() {
+  var parallaxImage = document.getElementById("parallax-image");
+
+  function handleScroll() {
+    if (window.innerWidth >= 641) {
+      var scrollPosition = window.scrollY;
+      parallaxImage.style.transform = "translateX(-50%) translateY(" + scrollPosition * 0.3 + "px)";
+    }
+  }
+
+  document.addEventListener("scroll", handleScroll);
+  window.addEventListener("resize", handleScroll);
+});

@@ -74,7 +74,7 @@
         <ul>
             <li class="home-link"><a href="index.php">Home</a></li>
 
-            <li><a href="#">Shop<i class="fa-solid fa-chevron-down"></i></a>
+            <li><a href="shop.php">Shop<i class="fa-solid fa-chevron-down"></i></a>
                 <div class="subnav">
                     <ul>
                         <li><a href="cart.php"><i class="fa-solid fa-chevron-right"></i> Cart</a></li>

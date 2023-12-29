@@ -69,6 +69,7 @@ if (isset($_POST['update_cart'])) {
         <?php include 'components/header.php'; ?>
 
         <div class="site-header-overlay">
+            <img class="bg-image" src="img/home-appliances.jpg" alt="bg-img" id="parallax-image">
             <div class="overlay"></div>
             <h1 class="page-title">cart</h1>
             <div class="links">

@@ -67,6 +67,7 @@ if (isset($_POST['add_to_cart'])) {
 
 
         <div class="site-header-overlay">
+            <img class="bg-image" src="img/home-appliances.jpg" alt="bg-img" id="parallax-image">
             <div class="overlay"></div>
             <h1 class="page-title">wishlist</h1>
             <div class="links">
@@ -75,46 +76,49 @@ if (isset($_POST['add_to_cart'])) {
             </div>
         </div>
 
-        <form action="" method="post">
-            <section class="wishlist">
-                <div class="row">
-                    <div class="column-left">
-                        <div class="left-cart-wrapper">
-                            <table class="left-cart-tbl">
-                                <thead>
-                                    <tr>
-                                        <th class="product-remove-header">&nbsp;</th>
-                                        <th class="product-thumbnail-header">&nbsp;</th>
-                                        <th class="product-name-header">product</th>
-                                        <th class="cart-btn-header">&nbsp;</th>
-                                        <th class="product-price-header">unit price</th>
-                                        <th class="product-subtotal-header">stock status</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php
-                                    $select_wishlist = $conn->prepare("SELECT * FROM `wishlist` WHERE session_id = ?");
-                                    $select_wishlist->execute([$session_id]);
-                                    if ($select_wishlist->rowCount() > 0) {
-                                        while ($fetch_wishlist = $select_wishlist->fetch(PDO::FETCH_ASSOC)) {
-                                            $pid = $fetch_wishlist['pid'];
-                                            $name = $fetch_wishlist['name'];
-                                            $price = $fetch_wishlist['price'];
-                                            $image = $fetch_wishlist['image'];
-                                    ?>
-                                            <input type="hidden" name="pid" value="<?php echo $pid ?>">
-                                            <input type="hidden" name="name" value="<?php echo $name; ?>">
-                                            <input type="hidden" name="price" value="<?php echo $price; ?>">
-                                            <input type="hidden" name="image" value="<?php echo $image; ?>">
-                                            <input type="hidden" name="qty" value="1">
-                                            <tr class="cart-item">
-                                                <td class="remove">
+        <section class="wishlist">
+            <div class="row">
+                <div class="column-left">
+                    <div class="left-cart-wrapper">
+                        <table class="left-cart-tbl">
+                            <thead>
+                                <tr>
+                                    <th class="product-remove-header">&nbsp;</th>
+                                    <th class="product-thumbnail-header">&nbsp;</th>
+                                    <th class="product-name-header">product</th>
+                                    <th class="cart-btn-header">&nbsp;</th>
+                                    <th class="product-price-header">unit price</th>
+                                    <th class="product-subtotal-header">stock status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php
+                                $select_wishlist = $conn->prepare("SELECT * FROM `wishlist` WHERE session_id = ?");
+                                $select_wishlist->execute([$session_id]);
+                                if ($select_wishlist->rowCount() > 0) {
+                                    while ($fetch_wishlist = $select_wishlist->fetch(PDO::FETCH_ASSOC)) {
+                                        $pid = $fetch_wishlist['pid'];
+                                        $name = $fetch_wishlist['name'];
+                                        $price = $fetch_wishlist['price'];
+                                        $image = $fetch_wishlist['image'];
+                                        $wishlist_id = $fetch_wishlist['id'];
+                                ?>
+                                        <tr class="cart-item">
+                                            <td class="remove">
+                                                <form action="" method="post">
                                                     <input type="hidden" name="wishlist_id" value="<?php echo $fetch_wishlist['id']; ?>">
                                                     <button type="submit" name="delete" class="delete-btn"><i class="fa-regular fa-trash-can"></i></button>
-                                                </td>
-                                                <td class="product-thumbnail"><a href="product_view.php?pid=<?php echo $pid; ?>"><img src="uploaded_img/<?php echo $image; ?>" alt=""></a></td>
-                                                <td class="product-name"><a href="product_view.php?pid=<?php echo $pid; ?>"><?php echo $name; ?></a></td>
-                                                <td class="cart-btn">
+                                                </form>
+                                            </td>
+                                            <td class="product-thumbnail"><a href="product_view.php?pid=<?php echo $pid; ?>"><img src="uploaded_img/<?php echo $image; ?>" alt=""></a></td>
+                                            <td class="product-name"><a href="product_view.php?pid=<?php echo $pid; ?>"><?php echo $name; ?></a></td>
+                                            <td class="cart-btn">
+                                                <form action="" method="post">
+                                                    <input type="hidden" name="pid" value="<?php echo $pid ?>">
+                                                    <input type="hidden" name="name" value="<?php echo $name; ?>">
+                                                    <input type="hidden" name="price" value="<?php echo $price; ?>">
+                                                    <input type="hidden" name="image" value="<?php echo $image; ?>">
+                                                    <input type="hidden" name="qty" value="1">
                                                     <?php
                                                     $fetch_product = $conn->prepare("SELECT * FROM `products` WHERE id = ?");
                                                     $fetch_product->execute([$pid]);
@@ -126,27 +130,27 @@ if (isset($_POST['add_to_cart'])) {
                                                         echo '<input type="submit" value="Add to cart" class="btn" name="add_to_cart">';
                                                     }
                                                     ?>
-                                                </td>
-                                                <td class="price">Rs. <?php echo number_format($price); ?></td>
-                                                <td class="status">
-                                                    <span style="color: <?= ($productData['availability'] === 'out of stock') ? 'red' : 'inherit'; ?>">
-                                                        <?= $productData['availability'] ?>
-                                                    </span>
-                                                </td>
-                                            </tr>
-                                    <?php
-                                        }
-                                    } else {
-                                        echo '<tr><td colspan="6" class="empty">Your wishlist is empty</td></tr>';
+                                                </form>
+                                            </td>
+                                            <td class="price">Rs. <?php echo number_format($price); ?></td>
+                                            <td class="status">
+                                                <span style="color: <?= ($productData['availability'] === 'out of stock') ? 'red' : 'inherit'; ?>">
+                                                    <?= $productData['availability'] ?>
+                                                </span>
+                                            </td>
+                                        </tr>
+                                <?php
                                     }
-                                    ?>
-                                </tbody>
-                            </table>
-                        </div>
+                                } else {
+                                    echo '<tr><td colspan="6" class="empty">Your wishlist is empty</td></tr>';
+                                }
+                                ?>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
-            </section>
-        </form>
+            </div>
+        </section>
 
         <?php include 'components/footer.php'; ?>
 
