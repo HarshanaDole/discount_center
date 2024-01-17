@@ -84,8 +84,6 @@
                 </div>
             </li>
             <?php
-            // Assuming you have a database connection
-            // $conn = new PDO("your_database_connection_details");
 
             // Fetch main categories (where parent_id is 0)
             $select_main_categories = $conn->prepare("SELECT * FROM categories WHERE parent_id = 0");
@@ -93,12 +91,12 @@
             $main_categories = $select_main_categories->fetchAll(PDO::FETCH_ASSOC);
             ?>
 
-            <li><a href="#">Categories<i class="fa-solid fa-chevron-down"></i></a>
+            <li><a href="shop.php">Categories<i class="fa-solid fa-chevron-down"></i></a>
                 <div class="subnav">
                     <ul>
                         <?php foreach ($main_categories as $main_category) : ?>
                             <li>
-                                <a href="#"><i class="fa-solid fa-chevron-right"></i> <?php echo $main_category['name']; ?></a>
+                                <a href="category.php?category=<?= urlencode($main_category['name']); ?>"><i class="fa-solid fa-chevron-right"></i> <?php echo $main_category['name']; ?></a>
                                 <?php
                                 // Fetch subcategories for the current main category
                                 $select_subcategories = $conn->prepare("SELECT * FROM categories WHERE parent_id = ?");
@@ -110,7 +108,7 @@
                                         <ul>
                                             <?php foreach ($subcategories as $subcategory) : ?>
                                                 <li>
-                                                    <a href="#"><i class="fa-solid fa-chevron-right"></i> <?php echo $subcategory['name']; ?></a>
+                                                    <a href="category.php?category=<?= urlencode($subcategory['name']); ?>"><i class="fa-solid fa-chevron-right"></i> <?php echo $subcategory['name']; ?></a>
                                                     <?php
                                                     // Fetch subsubcategories for the current subcategory
                                                     $select_subsubcategories = $conn->prepare("SELECT * FROM categories WHERE parent_id = ?");
@@ -122,7 +120,7 @@
                                                             <ul>
                                                                 <?php foreach ($subsubcategories as $subsubcategory) : ?>
                                                                     <li>
-                                                                        <a href="#"><i class="fa-solid fa-chevron-right"></i> <?php echo $subsubcategory['name']; ?></a>
+                                                                        <a href="category.php?category=<?= urlencode($subsubcategory['name']); ?>"><i class="fa-solid fa-chevron-right"></i> <?php echo $subsubcategory['name']; ?></a>
                                                                     </li>
                                                                 <?php endforeach; ?>
                                                             </ul>

@@ -33,12 +33,22 @@ function getMainCategoryName($conn, $category_id)
 $minPrice = $_POST['minPrice'];
 $maxPrice = $_POST['maxPrice'];
 
-// Query to fetch products within the specified price range
-$select_filtered_products = $conn->prepare("SELECT * FROM products WHERE price BETWEEN :minPrice AND :maxPrice");
-$select_filtered_products->bindParam(':minPrice', $minPrice);
-$select_filtered_products->bindParam(':maxPrice', $maxPrice);
-$select_filtered_products->execute();
-$filtered_products = $select_filtered_products->fetchAll(PDO::FETCH_ASSOC);
+// Query to fetch in-stock products within the specified price range
+$select_in_stock_products = $conn->prepare("SELECT * FROM products WHERE price BETWEEN :minPrice AND :maxPrice AND availability = 'in stock'");
+$select_in_stock_products->bindParam(':minPrice', $minPrice);
+$select_in_stock_products->bindParam(':maxPrice', $maxPrice);
+$select_in_stock_products->execute();
+$in_stock_products = $select_in_stock_products->fetchAll(PDO::FETCH_ASSOC);
+
+// Query to fetch out-of-stock products within the specified price range
+$select_out_of_stock_products = $conn->prepare("SELECT * FROM products WHERE price BETWEEN :minPrice AND :maxPrice AND availability = 'out of stock'");
+$select_out_of_stock_products->bindParam(':minPrice', $minPrice);
+$select_out_of_stock_products->bindParam(':maxPrice', $maxPrice);
+$select_out_of_stock_products->execute();
+$out_of_stock_products = $select_out_of_stock_products->fetchAll(PDO::FETCH_ASSOC);
+
+// Concatenate in-stock and out-of-stock products
+$filtered_products = array_merge($in_stock_products, $out_of_stock_products);
 
 // Output the filtered products
 foreach ($filtered_products as $product) {

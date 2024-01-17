@@ -23,6 +23,25 @@ if (isset($_POST['update'])) {
 
    $message[] = 'category updated successfully!';
 
+   $old_image = $_POST['old_image'];
+   $image = $_FILES['image']['name'];
+   $image = filter_var($image, FILTER_SANITIZE_STRING);
+   $image_size = $_FILES['image']['size'];
+   $image_tmp_name = $_FILES['image']['tmp_name'];
+   $image_folder = '../uploaded_img/' . $image;
+
+   if (!empty($image)) {
+      if ($image_size > 2000000) {
+         $message[] = 'image size is too large!';
+      } else {
+         $update_image = $conn->prepare("UPDATE `categories` SET image = ? WHERE id = ?");
+         $update_image->execute([$image, $id]);
+         move_uploaded_file($image_tmp_name, $image_folder);
+         unlink('../uploaded_img/' . $old_image);
+         $message[] = 'image updated successfully!';
+      }
+   }
+
    $old_icon = $_POST['old_icon'];
    $icon = $_FILES['icon']['name'];
    $icon = filter_var($icon, FILTER_SANITIZE_STRING);
@@ -78,7 +97,15 @@ if (isset($_POST['update'])) {
             <form action="" method="post" enctype="multipart/form-data">
                <input type="hidden" name="id" value="<?= $fetch_categories['id']; ?>">
                <input type="hidden" name="parent_id" value="<?= $currentParentId ?>">
+               <input type="hidden" name="old_image" value="<?= $fetch_categories['image']; ?>">
                <input type="hidden" name="old_icon" value="<?= $fetch_categories['icon']; ?>">
+               <span>image</span>
+               <div class="image-container">
+                  <div class="main-image">
+                     <img src="../uploaded_img/<?= $fetch_categories['image']; ?>" alt="">
+                  </div>
+               </div>
+               <span>icon</span>
                <div class="image-container">
                   <div class="main-image">
                      <img src="../uploaded_img/<?= $fetch_categories['icon']; ?>" alt="">
@@ -99,6 +126,8 @@ if (isset($_POST['update'])) {
                   }
                   ?>
                </select>
+               <span>update image</span>
+               <input type="file" name="image" accept="image/jpg, image/jpeg, image/png, image/webp" class="box">
                <span>update icon</span>
                <input type="file" name="icon" accept="image/jpg, image/jpeg, image/png, image/webp" class="box">
                <div class="flex-btn">

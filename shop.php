@@ -32,6 +32,7 @@ if (isset($_POST['add_to_cart'])) {
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
+    <link rel="stylesheet" href="fonts/remixicon.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/simplebar/5.3.0/simplebar.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
     <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
@@ -57,9 +58,67 @@ if (isset($_POST['add_to_cart'])) {
 
         <section class="shop">
 
-            <div class="separator">
-                <h4>Featured Products</h4>
-                <span class="line"></span>
+            <?php
+            // Function to recursively fetch all subcategories and calculate item count
+            function fetchSubcategory($conn, $categoryID)
+            {
+                $subcategories = [];
+
+                $select_subcategories = $conn->prepare("SELECT * FROM categories WHERE parent_id = :category_id");
+                $select_subcategories->bindParam(':category_id', $categoryID);
+                $select_subcategories->execute();
+                $subcategories = $select_subcategories->fetchAll(PDO::FETCH_ASSOC);
+
+                foreach ($subcategories as &$subcategory) {
+                    $countQuery = $conn->prepare("SELECT COUNT(*) as item_count FROM products WHERE category = ?");
+                    $countQuery->execute([$subcategory['id']]);
+                    $itemCount = $countQuery->fetch(PDO::FETCH_ASSOC)['item_count'];
+
+                    // Recursive call to get subsubcategories
+                    $subcategory['subcategories'] = fetchSubcategory($conn, $subcategory['id']);
+                    $subcategory['item_count'] = $itemCount;
+                }
+
+                return $subcategories;
+            }
+
+            // Fetch main categories (where parent_id is 0)
+            $select_main_categories = $conn->prepare("SELECT * FROM categories WHERE parent_id = 0");
+            $select_main_categories->execute();
+            $main_categories = $select_main_categories->fetchAll(PDO::FETCH_ASSOC);
+
+            ?>
+
+            <div class="category-separator">
+                <?php foreach ($main_categories as $category) : ?>
+                    <?php
+                    // Fetch the count of items for the main category and its subcategories
+                    $mainCategoryId = $category['id'];
+                    $mainCategoryItemCountQuery = $conn->prepare("SELECT COUNT(*) as item_count FROM products WHERE category = ?");
+                    $mainCategoryItemCountQuery->execute([$mainCategoryId]);
+                    $mainCategoryItemCount = $mainCategoryItemCountQuery->fetch(PDO::FETCH_ASSOC)['item_count'];
+
+                    // Fetch all subcategories and calculate item count recursively
+                    $subcategories = fetchSubcategory($conn, $mainCategoryId);
+
+                    // Sum up the item counts from subcategories
+                    foreach ($subcategories as $subcategory) {
+                        $mainCategoryItemCount += $subcategory['item_count'];
+
+                        // If there are subsubcategories, add their counts as well
+                        foreach ($subcategory['subcategories'] as $subsubcategory) {
+                            $mainCategoryItemCount += $subsubcategory['item_count'];
+                        }
+                    }
+                    ?>
+                    <a href="category.php?category=<?= urlencode($category['name']) ?>" class="category-card">
+                        <div class="icon"><img src="uploaded_img/<?= $category['icon'] ?>" alt="<?= $category['name'] ?>"></div>
+                        <div class="category-desc">
+                            <span class="category-name"><?= $category['name'] ?></span>
+                            <span class="item-qty"><?= $mainCategoryItemCount ?> items</span>
+                        </div>
+                    </a>
+                <?php endforeach; ?>
             </div>
 
             <?php
@@ -104,8 +163,14 @@ if (isset($_POST['add_to_cart'])) {
             // Set default values if no products are available
             $minPrice = isset($price_range['min_price']) ? $price_range['min_price'] : 0;
             $maxPrice = isset($price_range['max_price']) ? $price_range['max_price'] : 500000;
+
             ?>
 
+            <?php
+
+            include 'components/fetch_products.php';
+
+            ?>
 
             <div class="shop-choices">
 
@@ -118,58 +183,85 @@ if (isset($_POST['add_to_cart'])) {
                                 <div class="price-label">
                                     <span class="price-range" id="price-range">Rs. <?php echo number_format($minPrice); ?> - Rs. <?php echo number_format($maxPrice); ?></span>
                                 </div>
-                                <button class="filter" id="filterButton">filter</button>
+                                <a href="?page=1&orderby=<?= $orderby ?>&products_per_page=<?= $products_per_page ?>&min_price=<?= $minPrice ?>&max_price=<?= $maxPrice ?>" class="filter" id="filterButton">filter</a>
                             </div>
                         </div>
+                    </div>
+
+
+                    <div class="column">
+                        <h2 class="column-title">latest products</h2>
+
+
+                        <?php
+                        // Assuming you have a function to fetch the latest products from the database
+                        function getLatProducts($conn, $limit = 5)
+                        {
+                            $select_latest_products = $conn->prepare("SELECT * FROM products ORDER BY id DESC LIMIT :limit");
+                            $select_latest_products->bindParam(':limit', $limit, PDO::PARAM_INT);
+                            $select_latest_products->execute();
+
+                            return $select_latest_products->fetchAll(PDO::FETCH_ASSOC);
+                        }
+
+                        // Fetch the latest 5 products
+                        $latest_products = getLatProducts($conn, 5);
+
+                        // Generate HTML for each product
+                        foreach ($latest_products as $product) :
+                        ?>
+                            <div class="product-widget">
+                                <a class="img-container" href="product_view.php?pid=<?php echo $product['id']; ?>">
+                                    <img src="uploaded_img/<?php echo $product['image_01']; ?>" alt="<?php echo $product['name']; ?>">
+                                </a>
+                                <div class="details">
+                                    <a class="name" href="product_view.php?pid=<?php echo $product['id']; ?>">
+                                        <span title="<?php echo $product['name']; ?>" class="product-name"><?php echo $product['name']; ?></span>
+                                    </a>
+                                    <div class="prices">
+                                        <span class="newprice">Rs.<?php echo number_format($product['price']); ?></span>
+                                        <span class="oldprice">Rs.<?php echo number_format($product['old_price']); ?></span>
+                                    </div>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+
                     </div>
                 </div>
 
                 <div class="shop-products-container">
 
-                    <div class="text-field">
-                        <div class="heading">top choices</div>
-                        <div class="subheading">discount center</div>
+                    <div class="shop-top-bar">
+                        <div class="showing-list">showing <?= $start_range ?>-<?= $end_range ?> of <?= $total_products ?> results</div>
+
+                        <div class="dropdowns">
+                            <div class="custom-dropdown">
+                                <div class="dropdown-toggle" id="productsPerPage"><?= $display_perpage ?></div>
+                                <div class="dropdown-list">
+                                    <a href="?page=1&min_price=<?= $min_price ?>&max_price=<?= $max_price ?>&orderby=<?= $orderby ?>&products_per_page=16" class="dropdown-item 1" data-value="16">16</a>
+                                    <a href="?page=1&min_price=<?= $min_price ?>&max_price=<?= $max_price ?>&orderby=<?= $orderby ?>&products_per_page=28" class="dropdown-item 1" data-value="28">28</a>
+                                    <a href="?page=1&min_price=<?= $min_price ?>&max_price=<?= $max_price ?>&orderby=<?= $orderby ?>&products_per_page=40" class="dropdown-item 1" data-value="40">40</a>
+                                    <a href="?page=1&min_price=<?= $min_price ?>&max_price=<?= $max_price ?>&orderby=<?= $orderby ?>&products_per_page=All" class="dropdown-item 1" data-value="All">All</a>
+                                </div>
+                            </div>
+
+                            <div class="custom-dropdown">
+                                <div class="dropdown-toggle"><?= $display_orderby ?></div>
+                                <div class="dropdown-list">
+                                    <a href="?page=1&min_price=<?= $min_price ?>&max_price=<?= $max_price ?>&products_per_page=<?= $products_per_page ?>&orderby=latest" class="dropdown-item 2" id="latest" data-value="latest">latest</a>
+                                    <a href="?page=1&min_price=<?= $min_price ?>&max_price=<?= $max_price ?>&products_per_page=<?= $products_per_page ?>&orderby=priceLowToHigh" class="dropdown-item 2" id="priceLowToHigh" data-value="price (low to high)">price (low to high)</a>
+                                    <a href="?page=1&min_price=<?= $min_price ?>&max_price=<?= $max_price ?>&products_per_page=<?= $products_per_page ?>&orderby=priceHighToLow" class="dropdown-item 2" id="priceHighToLow" data-value="price (high to low)">price (high to low)</a>
+                                    <a href="?page=1&min_price=<?= $min_price ?>&max_price=<?= $max_price ?>&products_per_page=<?= $products_per_page ?>&orderby=a-z" class="dropdown-item 2" id="a-z" data-value="a-z">a-z</a>
+                                    <a href="?page=1&min_price=<?= $min_price ?>&max_price=<?= $max_price ?>&products_per_page=<?= $products_per_page ?>&orderby=z-a" class="dropdown-item 2" id="z-a" data-value="z-a">z-a</a>
+                                </div>
+                            </div>
+
+                        </div>
                     </div>
 
-                    <?php
-                    $select_products = $conn->prepare("SELECT * FROM `products`");
-                    $select_products->execute();
-                    $products = []; // Initialize an empty array to store the products
-
-                    if ($select_products->rowCount() > 0) {
-                        while ($fetch_product = $select_products->fetch(PDO::FETCH_ASSOC)) {
-                            $products[] = $fetch_product; // Store each product in the array
-                        }
-
-                        // Function to sort products by price in ascending order (low to high)
-                        function sortByPriceAndAvailability($a, $b)
-                        {
-                            // First, compare availability
-                            $availabilityComparison = strcmp($a['availability'], $b['availability']);
-
-                            // If availability is the same, compare prices
-                            if ($availabilityComparison === 0) {
-                                $priceA = (float) $a['price'];
-                                $priceB = (float) $b['price'];
-
-                                // If prices are the same, compare names alphabetically
-                                if ($priceA === $priceB) {
-                                    $nameComparison = strcmp($a['name'], $b['name']);
-                                    return $nameComparison;
-                                }
-
-                                return $priceA - $priceB;
-                            }
-
-                            return $availabilityComparison;
-                        }
-
-                        // Sort the products array using the custom sort function
-                        usort($products, 'sortByPriceAndAvailability');
-                    } else {
+                    <?php if (empty($products)) {
                         echo '<p class="empty">no products found!</p>';
-                    }
-                    ?>
+                    } ?>
 
                     <div id="filteredProductsContainer" class="grid-container">
 
@@ -213,9 +305,26 @@ if (isset($_POST['add_to_cart'])) {
 
                     </div>
 
-                    <div class="button">
-                        <a href="" class="btn">Shop All Appliances</a>
-                    </div>
+                    <?php
+                    $total_pages = ceil($total_products / $products_per_page);
+
+                    echo '<div class="page-numbers">';
+                    if ($current_page > 1) {
+                        echo '<a href="?page=' . ($current_page - 1) . '&products_per_page=' . $products_per_page . '&orderby=' . $orderby . '" class="arrow-btn"><i class="ri-arrow-left-line"></i></a>';
+                    }
+                    for ($i = 1; $i <= $total_pages; $i++) {
+                        if ($current_page == $i) {
+                            echo '<span class="btn active">' . $i . '</span>';
+                        } else {
+                            echo '<a href="?page=' . $i . '&products_per_page=' . $products_per_page . '&orderby=' . $orderby . '" class="btn">' . $i . '</a>';
+                        }
+                    }
+                    if ($current_page < $total_pages) {
+                        echo '<a href="?page=' . ($current_page + 1) . '&products_per_page=' . $products_per_page . '&orderby=' . $orderby . '" class="arrow-btn"><i class="ri-arrow-right-line"></i></a>';
+                    }
+                    echo '</div>';
+                    ?>
+
 
                 </div>
             </div>
@@ -242,32 +351,78 @@ if (isset($_POST['add_to_cart'])) {
                     $("#price-range").text("Rs. " + ui.values[0] + " - Rs. " + ui.values[1]);
                 }
             });
+
+            // Check if there are URL parameters for min_price and max_price
+            var urlParams = new URLSearchParams(window.location.search);
+            var minPriceParam = urlParams.get('min_price');
+            var maxPriceParam = urlParams.get('max_price');
+
+            if (minPriceParam !== null && maxPriceParam !== null) {
+                // Update only the handles without changing the entire range
+                $("#price-slider").slider("values", [minPriceParam, maxPriceParam]);
+                // Update the price-range span
+                $("#price-range").text("Rs. " + minPriceParam.toLocaleString() + " - Rs. " + maxPriceParam.toLocaleString());
+            }
+
+            $("#price-slider").on("slidestop", function(event, ui) {
+                var minPrice = ui.values[0];
+                var maxPrice = ui.values[1];
+                var currentURL = new URL(window.location.href);
+
+                // Update the URL parameters with the new min_price and max_price
+                currentURL.searchParams.set('min_price', minPrice);
+                currentURL.searchParams.set('max_price', maxPrice);
+
+                // Set the filterButton href attribute to the updated URL
+                $("#filterButton").attr("href", currentURL.href);
+            });
+
+
         });
 
-        $(document).ready(function() {
-            // Add an event listener for the filter button
-            $('#filterButton').on('click', function() {
-                // Get the selected price range values
-                var minPrice = $("#price-slider").slider("values", 0);
-                var maxPrice = $("#price-slider").slider("values", 1);
 
-                // AJAX request to fetch filtered products
-                $.ajax({
-                    url: 'components/filter_products.php', // Create a new PHP file for handling the filtering logic
-                    type: 'POST',
-                    data: {
-                        minPrice: minPrice,
-                        maxPrice: maxPrice
-                    },
-                    success: function(response) {
-                        // Update the container with the filtered products
-                        $('#filteredProductsContainer').html(response);
-                    },
-                    error: function(error) {
-                        console.error('Error:', error);
-                    }
-                });
+        $(document).ready(function() {
+
+            // Toggle dropdown list visibility on toggle click
+            $('.custom-dropdown .dropdown-toggle').on('click', function() {
+                var dropdown = $(this).closest('.custom-dropdown');
+                dropdown.find('.dropdown-list').toggleClass('active');
             });
+
+            // Handle item click in the dropdown list
+            $('.custom-dropdown .dropdown-item.1').on('click', function() {
+                var selectedValue = $(this).data('value');
+                var dropdown = $(this).closest('.custom-dropdown');
+
+                // Update the toggle button text with the selected value
+                dropdown.find('.dropdown-toggle').text(selectedValue);
+
+                // Do something with the selected value (e.g., update UI, trigger an event, etc.)
+                console.log('Selected value:', selectedValue);
+
+            });
+
+            // Handle item click in the dropdown list
+            $('.custom-dropdown .dropdown-item.2').on('click', function() {
+                var selectedValue = $(this).data('value');
+                var dropdown = $(this).closest('.custom-dropdown');
+
+                // Update the toggle button text with the selected value
+                dropdown.find('.dropdown-toggle').text(selectedValue);
+
+                // Do something with the selected value (e.g., update UI, trigger an event, etc.)
+                console.log('Selected value:', selectedValue);
+
+                // dropdown.find('.dropdown-list').removeClass('active');
+            });
+
+            // Hide dropdown list on document click
+            $(document).on('click', function(e) {
+                if (!$(e.target).closest('.custom-dropdown').length) {
+                    $('.custom-dropdown .dropdown-list').removeClass('active');
+                }
+            });
+
         });
     </script>
 

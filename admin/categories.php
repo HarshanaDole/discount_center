@@ -16,17 +16,29 @@ if (isset($_POST['add_category'])) {
    $parent_category = $_POST['category_id'];
    $parent_category = filter_var($parent_category, FILTER_SANITIZE_NUMBER_INT);
 
-   // Check if the 'icon' key exists in the $_FILES array and if the upload was successful
-   if (isset($_FILES['icon']) && $_FILES['icon']['error'] === UPLOAD_ERR_OK) {
-      $icon = $_FILES['icon']['name'];
-      $icon = filter_var($icon, FILTER_SANITIZE_STRING);
-      $icon_size = $_FILES['icon']['size'];
-      $icon_tmp_name = $_FILES['icon']['tmp_name'];
-      $icon_folder = '../uploaded_img/' . $icon;
+   // Check if the 'image' key exists in the $_FILES array and if the upload was successful
+   if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
+      $image = $_FILES['image']['name'];
+      $image = filter_var($image, FILTER_SANITIZE_STRING);
+      $image_size = $_FILES['image']['size'];
+      $image_tmp_name = $_FILES['image']['tmp_name'];
+      $image_folder = '../uploaded_img/' . $image;
    } else {
-      // Set a default value if 'icon' is not provided
-      $icon = null;
+      // Set a default value if 'image' is not provided
+      $image = null;
    }
+
+      // Check if the 'icon' key exists in the $_FILES array and if the upload was successful
+      if (isset($_FILES['icon']) && $_FILES['icon']['error'] === UPLOAD_ERR_OK) {
+         $icon = $_FILES['icon']['name'];
+         $icon = filter_var($icon, FILTER_SANITIZE_STRING);
+         $icon_size = $_FILES['icon']['size'];
+         $icon_tmp_name = $_FILES['icon']['tmp_name'];
+         $icon_folder = '../uploaded_img/' . $icon;
+      } else {
+         // Set a default value if 'image' is not provided
+         $icon = null;
+      }
 
    $select_category = $conn->prepare("SELECT * FROM `categories` WHERE name = ?");
    $select_category->execute([$name]);
@@ -34,10 +46,18 @@ if (isset($_POST['add_category'])) {
    if ($select_category->rowCount() > 0) {
       $message[] = 'category already exists!';
    } else {
-      $insert_category = $conn->prepare("INSERT INTO `categories`(name, parent_id, icon) VALUES(?,?,?)");
-      $insert_category->execute([$name, $parent_category, $icon]);
+      $insert_category = $conn->prepare("INSERT INTO `categories`(name, parent_id, image, icon) VALUES(?,?,?,?)");
+      $insert_category->execute([$name, $parent_category, $image, $icon]);
 
       if ($insert_category) {
+         if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
+            if ($image_size > 2000000) {
+               $message[] = 'image size is too large!';
+            } else {
+               move_uploaded_file($image_tmp_name, $image_folder);
+               $message[] = 'new category added!';
+            }
+         }
          if (isset($_FILES['icon']) && $_FILES['icon']['error'] === UPLOAD_ERR_OK) {
             if ($icon_size > 2000000) {
                $message[] = 'icon size is too large!';
@@ -45,7 +65,8 @@ if (isset($_POST['add_category'])) {
                move_uploaded_file($icon_tmp_name, $icon_folder);
                $message[] = 'new category added!';
             }
-         } else {
+         }
+          else {
             $message[] = 'new category added!';
          }
       }
@@ -56,9 +77,13 @@ if (isset($_POST['add_category'])) {
 if (isset($_GET['delete'])) {
 
    $delete_id = $_GET['delete'];
+   $delete_category_image = $conn->prepare("SELECT * FROM `categories` WHERE id = ?");
    $delete_category_icon = $conn->prepare("SELECT * FROM `categories` WHERE id = ?");
+   $delete_category_image->execute([$delete_id]);
    $delete_category_icon->execute([$delete_id]);
+   $fetch_delete_image = $delete_category_image->fetch(PDO::FETCH_ASSOC);
    $fetch_delete_icon = $delete_category_icon->fetch(PDO::FETCH_ASSOC);
+   unlink('../uploaded_img/' . $fetch_delete_image['image']);
    unlink('../uploaded_img/' . $fetch_delete_icon['icon']);
    $delete_category = $conn->prepare("DELETE FROM `categories` WHERE id = ?");
    $delete_category->execute([$delete_id]);
@@ -112,6 +137,10 @@ if (isset($_GET['delete'])) {
             </div>
             <div class="inputBox">
                <span>image (required)</span>
+               <input type="file" name="image" accept="image/jpg, image/jpeg, image/png, image/webp" class="box" id="imageInput" required>
+            </div>
+            <div class="inputBox">
+               <span>icon (required)</span>
                <input type="file" name="icon" accept="image/jpg, image/jpeg, image/png, image/webp" class="box" id="iconInput" required>
             </div>
          </div>
@@ -134,7 +163,7 @@ if (isset($_GET['delete'])) {
             while ($fetch_categories = $select_category->fetch(PDO::FETCH_ASSOC)) {
          ?>
                <div class="category-box">
-                  <img src="../uploaded_img/<?= $fetch_categories['icon']; ?>" alt="">
+                  <img src="../uploaded_img/<?= $fetch_categories['image']; ?>" alt="">
                   <h3><?= $fetch_categories['name']; ?></h3>
                   <div class="flex-btn">
                      <a href="update_category.php?update=<?= $fetch_categories['id']; ?>" class="option-btn">update</a>
@@ -186,12 +215,15 @@ if (isset($_GET['delete'])) {
 
    <script>
       document.getElementById('parentCategory').addEventListener('change', function() {
+         var imageInput = document.getElementById('imageInput');
          var iconInput = document.getElementById('iconInput');
          // Check if the selected value is not an empty string (main category)
          if (this.value !== '0') {
-            iconInput.disabled = true; // Disable the icon field
+            imageInput.disabled = true; // Disable the image field
+            iconInput.disabled = true;
          } else {
-            iconInput.disabled = false; // Enable the icon field
+            imageInput.disabled = false; // Enable the image field
+            iconInput.disabled = false;
          }
       });
    </script>

@@ -95,6 +95,29 @@ if (isset($_POST['add_to_cart'])) {
         </div>
 
         <?php
+
+        function fetchSubcat($conn, $categoryID)
+        {
+            $subcategories = [];
+
+            $select_subcategories = $conn->prepare("SELECT * FROM categories WHERE parent_id = :category_id");
+            $select_subcategories->bindParam(':category_id', $categoryID);
+            $select_subcategories->execute();
+            $subcategories = $select_subcategories->fetchAll(PDO::FETCH_ASSOC);
+
+            foreach ($subcategories as &$subcategory) {
+                $countQuery = $conn->prepare("SELECT COUNT(*) as item_count FROM products WHERE category = ?");
+                $countQuery->execute([$subcategory['id']]);
+                $itemCount = $countQuery->fetch(PDO::FETCH_ASSOC)['item_count'];
+
+                // Recursive call to get subsubcategories
+                $subcategory['subcategories'] = fetchSubcat($conn, $subcategory['id']);
+                $subcategory['item_count'] = $itemCount;
+            }
+
+            return $subcategories;
+        }
+
         // Fetch main categories (where parent_id is 0)
         $select_main_categories = $conn->prepare("SELECT * FROM categories WHERE parent_id = 0");
         $select_main_categories->execute();
@@ -105,23 +128,41 @@ if (isset($_POST['add_to_cart'])) {
             <div class="main-categories">
                 <?php foreach ($main_categories as $category) : ?>
                     <?php
-                    // Fetch the count of items for each category
-                    $categoryId = $category['id'];
-                    $countQuery = $conn->prepare("SELECT COUNT(*) as item_count FROM products WHERE category = ?");
-                    $countQuery->execute([$categoryId]);
-                    $itemCount = $countQuery->fetch(PDO::FETCH_ASSOC)['item_count'];
+                    // Fetch the count of items for the main category and its subcategories
+                    $mainCategoryId = $category['id'];
+                    $mainCategoryItemCountQuery = $conn->prepare("SELECT COUNT(*) as item_count FROM products WHERE category = ?");
+                    $mainCategoryItemCountQuery->execute([$mainCategoryId]);
+                    $mainCategoryItemCount = $mainCategoryItemCountQuery->fetch(PDO::FETCH_ASSOC)['item_count'];
+
+                    // Fetch all subcategories and calculate item count recursively
+                    $subcategories = fetchSubcat($conn, $mainCategoryId);
+
+                    // Sum up the item counts from subcategories
+                    foreach ($subcategories as $subcategory) {
+                        $mainCategoryItemCount += $subcategory['item_count'];
+
+                        // If there are subsubcategories, add their counts as well
+                        if (isset($subcategory['subcategories']) && is_array($subcategory['subcategories'])) {
+                            foreach ($subcategory['subcategories'] as $subsubcategory) {
+                                if (isset($subsubcategory['item_count'])) {
+                                    $mainCategoryItemCount += $subsubcategory['item_count'];
+                                }
+                            }
+                        }
+                    }
                     ?>
-                    <a href="#" class="category">
-                        <img src="uploaded_img/<?php echo $category['icon']; ?>" alt="<?php echo $category['name']; ?>">
+                    <a href="category.php?category=<?= $category['name']; ?>" class="category">
+                        <img src="uploaded_img/<?php echo $category['image']; ?>" alt="<?php echo $category['name']; ?>">
                         <div class="text-container">
                             <span class="heading"><?php echo $category['name']; ?></span>
                             <!-- You can retrieve the number of items associated with each category here -->
-                            <span class="subheading"><?php echo $itemCount; ?> items</span>
+                            <span class="subheading"><?php echo $mainCategoryItemCount; ?> items</span>
                         </div>
                     </a>
                 <?php endforeach; ?>
             </div>
         </div>
+
 
 
         <div class="separator">
