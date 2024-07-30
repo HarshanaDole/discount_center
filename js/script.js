@@ -157,6 +157,7 @@ document.addEventListener("DOMContentLoaded", function () {
     [currentSlide, prevSlide].forEach((slide) => {
       const textElements = slide.querySelectorAll(".product-text p");
       const textElements2 = slide.querySelectorAll(".product-text-2 p");
+      const textElements3 = slide.querySelectorAll(".product-text-3 p");
       textElements.forEach((text) => {
         text.style.animation = "none";
         void text.offsetWidth; // Trigger reflow
@@ -168,12 +169,19 @@ document.addEventListener("DOMContentLoaded", function () {
         void text.offsetWidth; // Trigger reflow
         text.style.animation = null;
       });
+
+      textElements3.forEach((text) => {
+        text.style.animation = "none";
+        void text.offsetWidth; //Trigger reflow
+        text.style.animation = null;
+      });
     });
   }
 
   function resetLogoAnimations() {
     const logoElements = document.querySelectorAll(".product-logo");
     const logoElements2 = document.querySelectorAll(".product-logo-2");
+    const logoElements3 = document.querySelectorAll(".product-logo-3");
     logoElements.forEach((logo) => {
       logo.style.animation = "none";
       void logo.offsetWidth; // Trigger reflow
@@ -183,6 +191,12 @@ document.addEventListener("DOMContentLoaded", function () {
     logoElements2.forEach((logo) => {
       logo.style.animation = "none";
       void logo.offsetWidth; // Trigger reflow
+      logo.style.animation = null;
+    });
+
+    logoElements3.forEach((logo) => {
+      logo.style.animation = "none";
+      void logo.offsetWidth; //Trigger reflow
       logo.style.animation = null;
     });
   }

@@ -80,13 +80,13 @@ if (isset($_POST['add_to_cart'])) {
                     <div class="bubble-bg-3"></div>
                     <img src="img/samsung-fridge.png" alt="Product 3" class="product-img-3">
                     <div class="product-logo-3">
-                        <img src="img/jbl-logo.png" alt="product-logo-3">
+                        <img src="img/Samsung-Logo.png" alt="product-logo-3">
                     </div>
                     <div class="product-text-3">
-                        <p>Designed For Sound.</p>
-                        <p>Tuned For Emotion.</p>
-                        <p>Now Wireless.</p>
-                        <p class="last-text-3" id="last-text-3">JBL Charge 5</p>
+                        <p>Smart Home Ready.</p>
+                        <p>Family Hub</p>
+                        <p>AI-powered Food Management</p>
+                        <p>Samsung Refrigerator</p>
                     </div>
                 </div>
             </div>
