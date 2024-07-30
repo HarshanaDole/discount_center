@@ -57,11 +57,13 @@ if (isset($_POST['add_to_cart'])) {
                         <input type="hidden" name="image" value="<?= $fetch_product['image_01']; ?>">
                         <div class="row">
                             <div class="image-container">
-                                <img src="uploaded_img/<?php echo $fetch_product['image_01']; ?>" alt="<?php echo $fetch_product['name']; ?>">
+                                <div class="main-img-wrapper">
+                                    <img id="mainImage" src="uploaded_img/<?php echo $fetch_product['image_01']; ?>" alt="<?php echo $fetch_product['name']; ?>" class="main-img">
+                                </div>
                                 <div class="other-img">
-                                    <img src="uploaded_img/<?php echo $fetch_product['image_01']; ?>" alt="<?php echo $fetch_product['name']; ?>">
-                                    <img src="uploaded_img/<?php echo $fetch_product['image_02']; ?>" alt="<?php echo $fetch_product['name']; ?>">
-                                    <img src="uploaded_img/<?php echo $fetch_product['image_03']; ?>" alt="<?php echo $fetch_product['name']; ?>">
+                                    <img class="thumbnail" src="uploaded_img/<?php echo $fetch_product['image_01']; ?>" alt="<?php echo $fetch_product['name']; ?>" data-img="uploaded_img/<?php echo $fetch_product['image_01']; ?>">
+                                    <img class="thumbnail" src="uploaded_img/<?php echo $fetch_product['image_02']; ?>" alt="<?php echo $fetch_product['name']; ?>" data-img="uploaded_img/<?php echo $fetch_product['image_02']; ?>">
+                                    <img class="thumbnail" src="uploaded_img/<?php echo $fetch_product['image_03']; ?>" alt="<?php echo $fetch_product['name']; ?>" data-img="uploaded_img/<?php echo $fetch_product['image_03']; ?>">
                                 </div>
                             </div>
                             <div class="product-info">
@@ -173,6 +175,18 @@ if (isset($_POST['add_to_cart'])) {
                 quantityElement.value = newQuantity;
             }
         }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const thumbnails = document.querySelectorAll('.thumbnail');
+            const mainImage = document.getElementById('mainImage');
+
+            thumbnails.forEach(thumbnail => {
+                thumbnail.addEventListener('click', function() {
+                    const newSrc = this.getAttribute('data-img');
+                    mainImage.src = newSrc;
+                });
+            });
+        });
     </script>
 
 

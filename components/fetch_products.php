@@ -42,69 +42,34 @@ $current_page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 $start_range = ($current_page - 1) * $products_per_page + 1;
 $end_range = min($current_page * $products_per_page, $total_products);
 
-if (isset($_GET['orderby'])) {
-    $_SESSION['orderby'] = $_GET['orderby'];
-    if ($_GET['orderby'] == 'latest') {
-        $select_products = $conn->prepare("SELECT * FROM `products` WHERE price BETWEEN :min_price AND :max_price ORDER BY FIELD(availability, 'in stock', 'out of stock') ASC, id DESC LIMIT :start, :per_page");
-        $select_products->bindValue(':min_price', $min_price, PDO::PARAM_INT);
-        $select_products->bindValue(':max_price', $max_price, PDO::PARAM_INT);
-        $select_products->bindValue(':start', ($current_page - 1) * $products_per_page, PDO::PARAM_INT);
-        $select_products->bindValue(':per_page', $products_per_page, PDO::PARAM_INT);
-        $select_products->execute();
-        $products = $select_products->fetchAll(PDO::FETCH_ASSOC);
-    }
-    if ($_GET['orderby'] == 'priceLowToHigh') {
-        $select_products = $conn->prepare("SELECT * FROM `products` WHERE price BETWEEN :min_price AND :max_price ORDER BY FIELD(availability, 'in stock', 'out of stock') ASC, price ASC LIMIT :start, :per_page");
-        $select_products->bindValue(':min_price', $min_price, PDO::PARAM_INT);
-        $select_products->bindValue(':max_price', $max_price, PDO::PARAM_INT);
-        $select_products->bindValue(':start', ($current_page - 1) * $products_per_page, PDO::PARAM_INT);
-        $select_products->bindValue(':per_page', $products_per_page, PDO::PARAM_INT);
-        $select_products->execute();
-        $products = $select_products->fetchAll(PDO::FETCH_ASSOC);
-    }
-    if ($_GET['orderby'] == 'priceHighToLow') {
-        $select_products = $conn->prepare("SELECT * FROM `products` WHERE price BETWEEN :min_price AND :max_price ORDER BY FIELD(availability, 'in stock', 'out of stock') ASC, price DESC LIMIT :start, :per_page");
-        $select_products->bindValue(':min_price', $min_price, PDO::PARAM_INT);
-        $select_products->bindValue(':max_price', $max_price, PDO::PARAM_INT);
-        $select_products->bindValue(':start', ($current_page - 1) * $products_per_page, PDO::PARAM_INT);
-        $select_products->bindValue(':per_page', $products_per_page, PDO::PARAM_INT);
-        $select_products->execute();
-        $products = $select_products->fetchAll(PDO::FETCH_ASSOC);
-    }
-    if ($_GET['orderby'] == 'a-z') {
-        $select_products = $conn->prepare("SELECT * FROM `products` WHERE price BETWEEN :min_price AND :max_price ORDER BY FIELD(availability, 'in stock', 'out of stock') ASC, name ASC LIMIT :start, :per_page");
-        $select_products->bindValue(':min_price', $min_price, PDO::PARAM_INT);
-        $select_products->bindValue(':max_price', $max_price, PDO::PARAM_INT);
-        $select_products->bindValue(':start', ($current_page - 1) * $products_per_page, PDO::PARAM_INT);
-        $select_products->bindValue(':per_page', $products_per_page, PDO::PARAM_INT);
-        $select_products->execute();
-        $products = $select_products->fetchAll(PDO::FETCH_ASSOC);
-    }
-    if ($_GET['orderby'] == 'z-a') {
-        $select_products = $conn->prepare("SELECT * FROM `products` WHERE price BETWEEN :min_price AND :max_price ORDER BY FIELD(availability, 'in stock', 'out of stock') ASC, name DESC LIMIT :start, :per_page");
-        $select_products->bindValue(':min_price', $min_price, PDO::PARAM_INT);
-        $select_products->bindValue(':max_price', $max_price, PDO::PARAM_INT);
-        $select_products->bindValue(':start', ($current_page - 1) * $products_per_page, PDO::PARAM_INT);
-        $select_products->bindValue(':per_page', $products_per_page, PDO::PARAM_INT);
-        $select_products->execute();
-        $products = $select_products->fetchAll(PDO::FETCH_ASSOC);
-    }
-} elseif (isset($_GET['min_price']) && isset($_GET['max_price'])) {
-    $select_products = $conn->prepare("SELECT * FROM `products` WHERE price BETWEEN :min_price AND :max_price ORDER BY FIELD(availability, 'in stock', 'out of stock') ASC, id DESC LIMIT :start, :per_page");
-    $select_products->bindValue(':min_price', $min_price, PDO::PARAM_INT);
-    $select_products->bindValue(':max_price', $max_price, PDO::PARAM_INT);
-    $select_products->bindValue(':start', ($current_page - 1) * $products_per_page, PDO::PARAM_INT);
-    $select_products->bindValue(':per_page', $products_per_page, PDO::PARAM_INT);
-    $select_products->execute();
-    $products = $select_products->fetchAll(PDO::FETCH_ASSOC);
-} else {
-    $_SESSION['orderby'] = $default_order_by;
-    $select_products = $conn->prepare("SELECT * FROM `products` ORDER BY FIELD(availability, 'in stock', 'out of stock') ASC, id DESC LIMIT :start, :per_page");
-    $select_products->bindValue(':start', ($current_page - 1) * $products_per_page, PDO::PARAM_INT);
-    $select_products->bindValue(':per_page', $products_per_page, PDO::PARAM_INT);
-    $select_products->execute();
-    $products = $select_products->fetchAll(PDO::FETCH_ASSOC);
-}
+$order_by = isset($_GET['orderby']) ? $_GET['orderby'] : $default_order_by;
+$_SESSION['orderby'] = $order_by;
+
+$order_clauses = [
+    'latest' => "id DESC",
+    'priceLowToHigh' => "price ASC",
+    'priceHighToLow' => "price DESC",
+    'a-z' => "name ASC",
+    'z-a' => "name DESC"
+];
+
+$order_by_clause = isset($order_clauses[$order_by]) ? $order_clauses[$order_by] : $order_clauses[$default_order_by];
+$availability_clause = "FIELD(availability, 'in stock', 'out of stock') ASC";
+
+$select_products_query = "
+    SELECT * FROM products 
+    WHERE price BETWEEN :min_price AND :max_price
+    ORDER BY $availability_clause, $order_by_clause
+    LIMIT :start, :per_page
+";
+
+$select_products = $conn->prepare($select_products_query);
+$select_products->bindValue(':min_price', $min_price, PDO::PARAM_INT);
+$select_products->bindValue(':max_price', $max_price, PDO::PARAM_INT);
+$select_products->bindValue(':start', ($current_page - 1) * $products_per_page, PDO::PARAM_INT);
+$select_products->bindValue(':per_page', $products_per_page, PDO::PARAM_INT);
+$select_products->execute();
+$products = $select_products->fetchAll(PDO::FETCH_ASSOC);
 
 $orderby_mapping = [
     'latest' => 'latest',
@@ -116,4 +81,3 @@ $orderby_mapping = [
 
 $orderby = $_SESSION['orderby'];
 $display_orderby = isset($orderby_mapping[$orderby]) ? $orderby_mapping[$orderby] : $orderby;
-

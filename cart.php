@@ -79,30 +79,30 @@ if (isset($_POST['update_cart'])) {
         </div>
 
         <section class="cart">
-            <?php 
+            <?php
             $grand_total = 0;
             $select_cart = $conn->prepare("SELECT * FROM `cart` WHERE session_id = ?");
             $select_cart->execute([$session_id]);
             if ($select_cart->rowCount() > 0) {
             ?>
-            <form action="" method="post">
-                <div class="row">
-                    <div class="column-left">
-                        <div class="left-cart-wrapper">
-                            <table class="left-cart-tbl">
-                                <thead>
-                                    <tr>
-                                        <th class="product-thumbnail-header">&nbsp;</th>
-                                        <th class="product-name-header">product</th>
-                                        <th class="product-price-header">&nbsp;</th>
-                                        <th class="product-qty-header">qty</th>
-                                        <th class="product-subtotal-header">subtotal</th>
-                                        <th class="product-remove-header">&nbsp;</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <?php
-                                    
+                <form action="" method="post">
+                    <div class="row">
+                        <div class="column-left">
+                            <div class="left-cart-wrapper">
+                                <table class="left-cart-tbl">
+                                    <thead>
+                                        <tr>
+                                            <th class="product-thumbnail-header">&nbsp;</th>
+                                            <th class="product-name-header">product</th>
+                                            <th class="product-price-header">&nbsp;</th>
+                                            <th class="product-qty-header">qty</th>
+                                            <th class="product-subtotal-header">subtotal</th>
+                                            <th class="product-remove-header">&nbsp;</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php
+
                                         while ($fetch_cart = $select_cart->fetch(PDO::FETCH_ASSOC)) {
                                             $pid = $fetch_cart['pid'];
                                             $name = $fetch_cart['name'];
@@ -111,7 +111,7 @@ if (isset($_POST['update_cart'])) {
                                             $quantity = $fetch_cart['quantity'];
                                             $subtotal = $price * $quantity;
                                             $grand_total += $subtotal;
-                                    ?>
+                                        ?>
                                             <tr class="cart-item">
                                                 <td class="product-thumbnail"><a href="product_view.php?pid=<?php echo $pid; ?>"><img src="uploaded_img/<?php echo $image; ?>" alt=""></a></td>
                                                 <td class="product-name"><a href="product_view.php?pid=<?php echo $pid; ?>"><?php echo $name; ?></a></td>
@@ -136,47 +136,45 @@ if (isset($_POST['update_cart'])) {
                                         }
                                             ?>
                                             </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                    <div class="column">
-                        <div class="right-cart-wrapper">
-                            <div class="cart-totals-container">
-                                <h2>cart totals</h2>
-                                <table class="right-cart-tbl">
-                                    <tbody>
-                                        <tr>
-                                            <th class="product-subtotal-header">subtotal</th>
-                                            <td class="product-subtotal">Rs. <?= number_format($grand_total) ?></th>
-                                        </tr>
-                                        <tr>
-                                            <th class="product-total-header">total</th>
-                                            <td class="product-total">Rs. <?= number_format($grand_total) ?></th>
-                                        </tr>
                                     </tbody>
                                 </table>
-                                <div class="cart-buttons">
-                                    <input type="submit" class="update-cart-btn" name="update_cart" value="Update Cart">
-                                    <a href="" class="checkout-btn">proceed to checkout</a>
+                            </div>
+                        </div>
+                        <div class="column">
+                            <div class="right-cart-wrapper">
+                                <div class="cart-totals-container">
+                                    <h2>cart totals</h2>
+                                    <table class="right-cart-tbl">
+                                        <tbody>
+                                            <tr>
+                                                <th class="product-subtotal-header">subtotal</th>
+                                                <td class="product-subtotal">Rs. <?= number_format($grand_total) ?></th>
+                                            </tr>
+                                            <tr>
+                                                <th class="product-total-header">total</th>
+                                                <td class="product-total">Rs. <?= number_format($grand_total) ?></th>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                    <div class="cart-buttons">
+                                        <input type="submit" class="update-cart-btn" name="update_cart" value="Update Cart">
+                                        <a href="" class="checkout-btn">proceed to checkout</a>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            </form>
-        <?php
-                                    } else {
-                                        echo '
+                </form>
+            <?php
+            } else {
+                echo '
             <div class="shopping-img">
-                <span class="material-symbols-outlined">
-                    shopping_bag
-                </span>
+                <img src="img/a-shopping-bag-bgless.png" alt="cart">
             </div>
             <div class="empty">Your cart is currently empty</div>
             <div class="btn-container"><a href="index.php"><button class="btn" type="submit">Return to Home</button></a></div>';
-                                    }
-        ?>
+            }
+            ?>
         </section>
 
 

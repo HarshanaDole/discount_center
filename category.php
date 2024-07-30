@@ -211,14 +211,35 @@ if (isset($_POST['add_to_cart'])) {
                 }
             }
 
-            // Fetch the minimum and maximum prices from the products table
-            $select_price_range = $conn->prepare("SELECT MIN(price) AS min_price, MAX(price) AS max_price FROM products");
-            $select_price_range->execute();
-            $price_range = $select_price_range->fetch(PDO::FETCH_ASSOC);
+            // Fetch all subcategories and sub-subcategories under the selected category
+            $category_query = "
+SELECT id
+FROM categories
+WHERE id = :category_id OR parent_id = :category_id OR parent_id IN (
+    SELECT id FROM categories WHERE parent_id = :category_id
+)
+";
 
-            // Set default values if no products are available
-            $minPrice = isset($price_range['min_price']) ? $price_range['min_price'] : 0;
-            $maxPrice = isset($price_range['max_price']) ? $price_range['max_price'] : 500000;
+            try {
+                // Fetch the minimum and maximum prices from the products table for the selected categories
+                $price_query = "
+    SELECT MIN(price) as min_price, MAX(price) as max_price
+    FROM products
+    WHERE category IN ({$category_query})
+";
+                $price_result = $conn->prepare($price_query);
+                $price_result->bindValue(':category_id', $selectedCategoryID, PDO::PARAM_INT);
+                $price_result->execute();
+                $price_range = $price_result->fetch(PDO::FETCH_ASSOC);
+
+                // Set default values if no products are available
+                $minPrice = isset($price_range['min_price']) ? $price_range['min_price'] : 0;
+                $maxPrice = isset($price_range['max_price']) ? $price_range['max_price'] : 500000;
+            } catch (PDOException $e) {
+                // Handle any database errors
+                die("Error: " . $e->getMessage());
+            }
+
 
             ?>
 
@@ -288,7 +309,7 @@ if (isset($_POST['add_to_cart'])) {
                 <div class="shop-products-container">
 
                     <div class="shop-top-bar">
-                        <div class="showing-list">showing <?= $start_range+1 ?>-<?= $end_range ?> of <?= $total_products ?> results</div>
+                        <div class="showing-list">showing <?= $start_range ?>-<?= $end_range ?> of <?= $total_products ?> results</div>
 
                         <div class="dropdowns">
                             <div class="custom-dropdown">
@@ -302,13 +323,13 @@ if (isset($_POST['add_to_cart'])) {
                             </div>
 
                             <div class="custom-dropdown">
-                                <div class="dropdown-toggle"><?= $display_orderby ?></div>
+                                <div class="dropdown-toggle" id="sort-dropdown" onclick="toggleDropdown('orderby-dropdown')"><?= $display_orderby ?></div>
                                 <div class="dropdown-list">
-                                    <a href="?category=<?= $selectedCategory ?>&page=1&min_price=<?= $min_price ?>&max_price=<?= $max_price ?>&products_per_page=<?= $products_per_page ?>&orderby=latest" class="dropdown-item 2" id="latest" data-value="latest">latest</a>
-                                    <a href="?category=<?= $selectedCategory ?>&page=1&min_price=<?= $min_price ?>&max_price=<?= $max_price ?>&products_per_page=<?= $products_per_page ?>&orderby=priceLowToHigh" class="dropdown-item 2" id="priceLowToHigh" data-value="price (low to high)">price (low to high)</a>
-                                    <a href="?category=<?= $selectedCategory ?>&page=1&min_price=<?= $min_price ?>&max_price=<?= $max_price ?>&products_per_page=<?= $products_per_page ?>&orderby=priceHighToLow" class="dropdown-item 2" id="priceHighToLow" data-value="price (high to low)">price (high to low)</a>
-                                    <a href="?category=<?= $selectedCategory ?>&page=1&min_price=<?= $min_price ?>&max_price=<?= $max_price ?>&products_per_page=<?= $products_per_page ?>&orderby=a-z" class="dropdown-item 2" id="a-z" data-value="a-z">a-z</a>
-                                    <a href="?category=<?= $selectedCategory ?>&page=1&min_price=<?= $min_price ?>&max_price=<?= $max_price ?>&products_per_page=<?= $products_per_page ?>&orderby=z-a" class="dropdown-item 2" id="z-a" data-value="z-a">z-a</a>
+                                    <a href="#" onclick="changeOrder('latest')" class="dropdown-item <?= ($orderby === 'latest') ? 'active' : '' ?>" id="latest" data-value="latest" data-sort="latest">latest</a>
+                                    <a href="#" onclick="changeOrder('priceLowToHigh')" class="dropdown-item <?= ($orderby === 'priceLowToHigh') ? 'active' : '' ?>" id="priceLowToHigh" data-value="price (low to high)" data-sort="priceLowToHigh">price (low to high)</a>
+                                    <a href="#" onclick="changeOrder('priceHighToLow')" class="dropdown-item <?= ($orderby === 'priceHighToLow') ? 'active' : '' ?>" id="priceHighToLow" data-value="price (high to low)" data-sort="priceHighToLow">price (high to low)</a>
+                                    <a href="#" onclick="changeOrder('a-z')" class="dropdown-item <?= ($orderby === 'a-z') ? 'active' : '' ?>" id="a-z" data-value="a-z" data-sort="a-z">a-z</a>
+                                    <a href="#" onclick="changeOrder('z-a')" class="dropdown-item <?= ($orderby === 'z-a') ? 'active' : '' ?>" id="z-a" data-value="z-a" data-sort="z-a">z-a</a>
                                 </div>
                             </div>
 
@@ -328,7 +349,7 @@ if (isset($_POST['add_to_cart'])) {
                                 <input type="hidden" name="price" value="<?php echo $product['price']; ?>">
                                 <input type="hidden" name="image" value="<?php echo $product['image_01']; ?>">
                                 <input type="hidden" name="qty" value="1">
-                                <div class="product-card <?php echo ($product['availability'] === 'out of stock') ? 'out-of-stock' : ''; ?>">
+                                <div class="product-card <?php echo ($product['availability'] === 'out of stock') ? 'out-of-stock' : ''; ?>" data-product-id="<?php echo $product['id']; ?>" data-product-name="<?php echo htmlspecialchars($product['name']); ?>">
                                     <a class="image-container" href="product_view.php?pid=<?php echo $product['id']; ?>">
                                         <img src="uploaded_img/<?php echo $product['image_01']; ?>" alt="product">
                                     </a>
@@ -366,17 +387,17 @@ if (isset($_POST['add_to_cart'])) {
 
                     echo '<div class="page-numbers">';
                     if ($current_page > 1) {
-                        echo '<a href="?page=' . ($current_page - 1) . '&products_per_page=' . $products_per_page . '&orderby=' . $orderby . '" class="arrow-btn"><i class="ri-arrow-left-line"></i></a>';
+                        echo '<a href="?category=' . $selectedCategory . '&page=' . ($current_page - 1) . '&products_per_page=' . $products_per_page . '&orderby=' . $orderby . '" class="arrow-btn"><i class="ri-arrow-left-line"></i></a>';
                     }
                     for ($i = 1; $i <= $total_pages; $i++) {
                         if ($current_page == $i) {
                             echo '<span class="btn active">' . $i . '</span>';
                         } else {
-                            echo '<a href="?page=' . $i . '&products_per_page=' . $products_per_page . '&orderby=' . $orderby . '" class="btn">' . $i . '</a>';
+                            echo '<a href="?category=' . $selectedCategory . '&page=' . $i . '&products_per_page=' . $products_per_page . '&orderby=' . $orderby . '" class="btn">' . $i . '</a>';
                         }
                     }
                     if ($current_page < $total_pages) {
-                        echo '<a href="?page=' . ($current_page + 1) . '&products_per_page=' . $products_per_page . '&orderby=' . $orderby . '" class="arrow-btn"><i class="ri-arrow-right-line"></i></a>';
+                        echo '<a href="?category=' . $selectedCategory . '&page=' . ($current_page + 1) . '&products_per_page=' . $products_per_page . '&orderby=' . $orderby . '" class="arrow-btn"><i class="ri-arrow-right-line"></i></a>';
                     }
                     echo '</div>';
                     ?>
@@ -396,6 +417,63 @@ if (isset($_POST['add_to_cart'])) {
     <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
 
     <script>
+        function toggleDropdown(dropdownId) {
+            var dropdown = document.getElementById(dropdownId);
+            dropdown.classList.toggle("active");
+        }
+
+        function changeOrder(order) {
+            // Modify the URL or perform any other action based on the selected order
+            window.location.href = `?category=<?= $selectedCategory ?>&page=1&min_price=<?= $min_price ?>&max_price=<?= $max_price ?>&products_per_page=<?= $products_per_page ?>&orderby=${order}`;
+        }
+
+        document.getElementById('sort-dropdown').addEventListener('click', function() {
+            // Get the selected sorting criteria
+            var selectedSort = event.target.dataset.sort;
+
+            // Get the container element that holds the products
+            var productsContainer = document.getElementById('filteredProductsContainer');
+
+            // Get all product items within the container
+            var products = Array.from(productsContainer.getElementsByClassName('product-card'));
+
+            // Function to compare products based on the selected sorting criteria
+            function compareProducts(a, b) {
+                // Logic to compare products based on your selected criteria
+                // Modify this according to your requirements
+                var aValue = a.dataset.productName; // Update with the actual data attribute
+                var bValue = b.dataset.productName; // Update with the actual data attribute
+
+                if (selectedSort === 'priceLowToHigh') {
+                    return aValue - bValue;
+                } else if (selectedSort === 'priceHighToLow') {
+                    return bValue - aValue;
+                } else if (selectedSort === 'a-z') {
+                    return aValue.localeCompare(bValue);
+                } else if (selectedSort === 'z-a') {
+                    return bValue.localeCompare(aValue);
+                } else {
+                    // Default to sorting by latest if no criteria matched
+                    return 0;
+                }
+            }
+
+            // Sort the array based on the compare function
+            products.sort(compareProducts);
+
+            // Remove existing products from the container
+            while (productsContainer.firstChild) {
+                productsContainer.removeChild(productsContainer.firstChild);
+            }
+
+            // Append sorted products back to the container
+            products.forEach(function(product) {
+                productsContainer.appendChild(product);
+            });
+        });
+
+
+
         $(function() {
             // Initialize the price slider
             $("#price-slider").slider({
