@@ -74,6 +74,21 @@ if (isset($_POST['add_to_cart'])) {
                         <p>4K Smart TV</p>
                     </div>
                 </div>
+
+                <div class="product-slide animate-slide">
+                    <div class="big-bubble-bg-3"></div>
+                    <div class="bubble-bg-3"></div>
+                    <img src="img/samsung-fridge.png" alt="Product 3" class="product-img-3">
+                    <div class="product-logo-3">
+                        <img src="img/Samsung-Logo.png" alt="product-logo-3">
+                    </div>
+                    <div class="product-text-3">
+                        <p>Smart Home Ready.</p>
+                        <p>Family Hub</p>
+                        <p>AI-powered Food Management</p>
+                        <p>Samsung Refrigerator</p>
+                    </div>
+                </div>
             </div>
             <i id="prevButton" class="fa-solid fa-angle-left arrow-icon"></i>
             <i id="nextButton" class="fa-solid fa-angle-right arrow-icon"></i>
