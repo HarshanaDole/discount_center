@@ -1224,9 +1224,94 @@ a {
   height: auto;
   position: absolute;
   top: 10%;
+  right: 60%;
   z-index: 1;
   user-select: none;
   -webkit-user-drag: none;
+}
+
+.product-text-3 {
+  position: absolute;
+  top: 40%;
+  left: 50%;
+  white-space: nowrap;
+  text-align: center;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.animate-slide .product-logo-3 {
+  transform: translate(-50%, -50%) scale(0.5);
+  opacity: 0;
+  position: absolute;
+  top: 25%;
+  left: 65%;
+  text-align: center;
+  user-select: none;
+  -webkit-user-drag: none;
+  animation: zoomInLogo2 2s ease-in forwards, logoStay 1s linear 4s forwards;
+}
+
+@keyframes zoomInLogo3 {
+  0% {
+    transform: translate(-50%, -50%) scale (1.5);
+    opacity: 0;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+}
+
+.product-slide .product-logo-3 img {
+  width: 200px;
+  height: auto;
+  margin-bottom: 10px;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+/* Staggered animation delays for each slide */
+.animate-slide .product-text-3 p {
+  font-family: "Times New Roman", Times, serif;
+  color: white;
+  font-size: 4rem;
+  font-weight: 700;
+  position: relative;
+  top: 0;
+  left: 0;
+  transform: translate(-50%, -50%);
+  margin: 0;
+  animation: slideInFromBottom 0.5s ease-in-out forwards;
+  text-align: center;
+  opacity: 0;
+}
+
+@keyframes slideInFromBottom {
+  0% {
+    transform: translateY(200%);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(-50%);
+    opacity: 1;
+  }
+}
+
+.product-slide .product-text-3 p:nth-child(1) {
+  animation-delay: 2s;
+}
+
+.product-slide .product-text-3 p:nth-child(2) {
+  animation-delay: 3s;
+}
+
+.product-slide .product-text-3 p:nth-child(3) {
+  animation-delay: 4s;
+}
+
+.product-slide .product-text-3 p:nth-child(4) {
+  animation-delay: 5s;
 }
 
 /* ------ categories section starts from here----- */
@@ -2891,7 +2976,7 @@ a {
   text-transform: uppercase;
   padding: 1rem;
   color: var(--white);
-  background-color: var(--link);
+  background-color: var(--main-color);
   border-radius: 5px;
   cursor: pointer;
   position: absolute;
@@ -3137,6 +3222,165 @@ a {
   transform: translateY(-50%);
 }
 
+/* ------------- checkout starts from here ------------*/
+
+.coupon-section {
+  background-color: #f7f7f7;
+  padding: 20px 0;
+  text-align: center;
+  border-bottom: 1px solid #e5e5e5;
+  border-radius: 5px;
+}
+
+.coupon-section p {
+  margin: 0;
+  font-size: 16px;
+  color: #333;
+}
+
+.coupon-section a {
+  color: var(--third-color);
+  text-decoration: none;
+  font-weight: bold;
+}
+
+.coupon-section a:hover {
+  text-decoration: underline;
+}
+
+#couponForm {
+  margin-top: 10px;
+}
+
+.coupon-input {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  width: 200px;
+}
+
+.coupon-button {
+  padding: 10px 20px;
+  background-color: var(--main-color);
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.coupon-button:hover {
+  background-color: var(--secondary-color);
+}
+
+.checkout-container {
+  display: flex;
+  justify-content: space-between;
+  padding: 20px;
+}
+
+.billing-details {
+  width: 48%;
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 5px;
+}
+
+.order-details {
+  width: 48%;
+  height: 70%;
+  background-color: #e7e7e7;
+  padding: 20px;
+  border-radius: 5px;
+}
+
+.billing-details h2, .order-details h2 {
+  margin-bottom: 20px;
+  font-size: 24px;
+  font-weight: bold;
+  font-size: 3.5rem;
+  color: #333;
+}
+
+.order-details h3 {
+  margin-bottom: 20px;
+  font-size: 24px;
+  font-weight: 500;
+  color: #333;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 500;
+  font-size: 1.8rem;
+}
+
+.form-group input, .form-group select {
+  width: 100%;
+  padding: 15px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  margin-bottom: 10px;
+}
+
+.order-details table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+}
+
+.order-details th, .order-details td {
+  padding: 10px;
+  text-align: left;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.order-details th {
+  background-color: #f7f7f7;
+  font-weight: 500;
+  font-size: 1.8rem;
+  margin-bottom: 10px;
+}
+
+.order-details td {
+  vertical-align: top;
+  font-size: 1.5rem;
+}
+
+.order-details input[type="radio"] {
+  margin-right: 10px;
+  margin-bottom: 10px;
+}
+
+.payment-method label {
+  font-size: 1.8rem;
+  font-weight: bold;
+}
+
+.payment-method p {
+  margin: 5px 0 15px;
+  color: #666;
+  font-size: 1.5rem;
+}
+
+.order-details button {
+  width: 100%;
+  padding: 15px;
+  background-color: var(--main-color);
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.order-details button:hover {
+  background-color: var(--secondary-color);
+}
+
 /* ------------- footer starts from here ------------*/
 
 .footer {
@@ -3283,9 +3527,13 @@ a {
   border-radius: 0 5px 5px 0;
   position: absolute;
   right: 0;
-  background-color: var(--link);
+  background-color: var(--black);
   color: var(--white);
   cursor: pointer;
+}
+
+.column-container .input-field .btn:hover {
+  background-color: rgba(0, 0, 0, 0.658);
 }
 
 /* @media (max-width:1219px) {
@@ -4166,7 +4414,7 @@ a {
     text-transform: uppercase;
     padding: 1rem 0.5rem;
     color: var(--white);
-    background-color: var(--link);
+    background-color: var(--main-color);
     border-radius: 5px;
     cursor: pointer;
     position: absolute;
@@ -4219,7 +4467,7 @@ a {
     text-transform: uppercase;
     padding: 1rem 0.5rem;
     color: var(--white);
-    background-color: var(--link);
+    background-color: var(--main-color);
     border-radius: 5px;
     cursor: pointer;
     position: absolute;
